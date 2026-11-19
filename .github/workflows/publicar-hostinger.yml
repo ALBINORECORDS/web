@@ -38,4 +38,5 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
-          server-dir: public_html/
+          # Carpeta real del dominio (la public_html de la raíz NO es la del sitio).
+          server-dir: domains/xn--albiorecords-dhb.com/public_html/
