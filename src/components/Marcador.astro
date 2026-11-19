@@ -1,0 +1,96 @@
+---
+// Marcador de posición para material que falta: trama diagonal, borde discontinuo y etiqueta
+// que dice qué va ahí. Con `src` muestra la imagen real.
+// tipo: 'recorte' (PNG sin fondo, con silueta) | 'logo' | 'caja'
+interface Props {
+  tipo?: 'recorte' | 'logo' | 'caja';
+  src?: string;
+  etiqueta: string;
+  medida?: string;
+  forma?: 'persona' | 'audifonos' | 'producto';
+  sinTexto?: boolean;
+  class?: string;
+}
+const { tipo = 'caja', src, etiqueta, medida, forma = 'persona', sinTexto = false, class: clase = '' } = Astro.props;
+
+const SILUETAS = {
+  persona: 'M100 18c-22 0-37 17-37 40 0 17 7 31 17 39-6 4-12 6-21 9-34 11-49 30-55 74h192c-6-44-21-63-55-74-9-3-15-5-21-9 10-8 17-22 17-39 0-23-15-40-37-40z',
+  audifonos: 'M38 128V96c0-44 28-74 62-74s62 30 62 74v32M22 112c0-10 8-16 18-16h10v74H40c-10 0-18-6-18-16zm156 0c0-10-8-16-18-16h-10v74h10c10 0 18-6 18-16z',
+  producto: 'M60 24h80l12 26v126c0 8-6 14-14 14H62c-8 0-14-6-14-14V50z',
+};
+const trama = `trama-${Math.random().toString(36).slice(2, 8)}`;
+---
+{src ? (
+  <img class={`marcador-img ${clase}`} src={src} alt="" loading="lazy" style={tipo === 'caja' ? 'object-fit: cover' : 'object-fit: contain'} />
+) : tipo === 'logo' ? (
+  <span class={`marcador marcador--logo ${clase}`} role="img" aria-label={`Espacio para ${etiqueta}`}>{etiqueta}</span>
+) : tipo === 'recorte' ? (
+  <div class={`marcador marcador--recorte ${clase}`} role="img" aria-label={`Espacio para ${etiqueta}`}>
+    <svg viewBox="0 0 200 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <defs>
+        <pattern id={trama} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="8" height="8" fill="var(--ph-fondo)" />
+          <rect width="2" height="8" fill="var(--ph-trama)" />
+        </pattern>
+      </defs>
+      <path d={SILUETAS[forma]} fill={`url(#${trama})`} stroke="var(--ph-linea)" stroke-width="1.2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke" />
+    </svg>
+    {!sinTexto && <span class="marcador__etiqueta">Recorte PNG · {etiqueta}{medida ? ` · ${medida}` : ''}</span>}
+  </div>
+) : (
+  <div class={`marcador marcador--caja ${clase}`} role="img" aria-label={`Espacio para ${etiqueta}`}>
+    {!sinTexto && <span class="marcador__etiqueta">Foto · {etiqueta}{medida && <small>{medida}</small>}</span>}
+  </div>
+)}
+
+<style>
+  /* Toman el color del texto que los rodea: se ven en fondos claros y oscuros */
+  .marcador {
+    --ph-fondo: color-mix(in oklab, currentColor 7%, transparent);
+    --ph-trama: color-mix(in oklab, currentColor 16%, transparent);
+    --ph-linea: color-mix(in oklab, currentColor 45%, transparent);
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+  .marcador--caja {
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(45deg, var(--ph-trama) 0 2px, transparent 2px 9px), var(--ph-fondo);
+    outline: 1px dashed var(--ph-linea);
+    outline-offset: -1px;
+  }
+  .marcador--recorte { width: 100%; height: 100%; }
+  .marcador--recorte svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .marcador__etiqueta {
+    position: relative;
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+    max-width: 90%;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--negro) 70%, transparent);
+    color: rgba(255, 255, 255, .8);
+    font: 700 10px/1.35 var(--font-mono);
+    letter-spacing: .12em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .marcador--recorte .marcador__etiqueta { align-self: end; margin-bottom: 8%; }
+  .marcador__etiqueta small { font-size: 9px; opacity: .7; }
+  .marcador--logo {
+    display: inline-grid;
+    height: 36px;
+    min-width: 120px;
+    padding: 0 14px;
+    border-radius: 999px;
+    outline: 1px dashed var(--ph-linea);
+    color: color-mix(in oklab, currentColor 70%, transparent);
+    font: 700 10px var(--font-mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .marcador-img { width: 100%; height: 100%; }
+</style>

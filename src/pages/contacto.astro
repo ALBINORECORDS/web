@@ -1,0 +1,53 @@
+---
+import Base from '../layouts/Base.astro';
+import ContactoApertura from '../components/ContactoApertura.astro';
+import ContactoFormulario from '../components/ContactoFormulario.astro';
+import CieloEstrellado from '../components/CieloEstrellado.astro';
+---
+<Base titulo="Contacto" descripcion="Cuéntanos tu idea: producción musical, bodas, podcast, redes y fotografía.">
+  <!-- Fotos que se abren hacia las esquinas y dejan el título al centro -->
+  <ContactoApertura />
+
+  <!-- Canales directos y formulario de correo, sobre un cielo estrellado a lo ancho -->
+  <div class="con-cielo" data-cielo-zona>
+    <div class="con-cielo__escena">
+      <CieloEstrellado semilla={23} fuerza={2.6} />
+      <ContactoFormulario />
+    </div>
+  </div>
+</Base>
+
+<style>
+  /* La sección se queda fija mientras se hace scroll (--pausa) y las estrellas suben o bajan.
+     El cielo cubre todo el ancho, por detrás. */
+  .con-cielo { --pausa: 110svh; position: relative; }
+  .con-cielo::after { content: ""; display: block; height: var(--pausa); }
+  .con-cielo__escena {
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    isolation: isolate;
+    overflow: hidden;
+  }
+  /* Si la sección no cabe en la pantalla (celular), no se fija: se recorre normal */
+  .con-cielo.sin-fijar::after { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .con-cielo::after { display: none; }
+    .con-cielo__escena { position: relative; }
+  }
+</style>
+
+<script>
+  function ajustar() {
+    document.querySelectorAll<HTMLElement>('[data-cielo-zona]').forEach((zona) => {
+      const escena = zona.querySelector<HTMLElement>('.con-cielo__escena');
+      if (escena) zona.classList.toggle('sin-fijar', escena.offsetHeight > window.innerHeight + 1);
+    });
+  }
+  ajustar();
+  window.addEventListener('resize', ajustar);
+  document.addEventListener('astro:page-load', ajustar);
+</script>

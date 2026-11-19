@@ -1,0 +1,298 @@
+---
+import Icon from './Icon.astro';
+import { menu, site } from '../data/site';
+import { servicios } from '../data/servicios';
+
+const anio = new Date().getFullYear();
+// Cinta con los servicios: se repite dos veces para que el desplazamiento continuo no tenga cortes
+const cinta = servicios.map((s) => s.titulo);
+---
+
+<footer class="pie">
+  <!-- Cinta infinita de servicios: estética de negativo / rollo cinematográfico -->
+  <div class="pie__cinta" aria-hidden="true">
+    <div class="pie__cinta-pista">
+      {[0, 1].map(() => (
+        <span class="pie__cinta-grupo">
+          {cinta.map((t) => (
+            <span class="pie__cinta-item">
+              {t}<i>·</i>
+            </span>
+          ))}
+        </span>
+      ))}
+    </div>
+  </div>
+
+  <div class="contenedor pie__contenido">
+    <!-- Identidad: claqueta y tipografía de la productora -->
+    <div class="pie__marca">
+      <a class="pie__logo" href="/" aria-label={`${site.nombre} – Inicio`}>
+        <img
+          src="/media/logo-blanco.webp"
+          alt=""
+          width="110"
+          height="160"
+          loading="lazy"
+        />
+      </a>
+      <h2 class="pie__nombre">{site.nombre}</h2>
+      <p class="pie__lema">{site.lema}</p>
+    </div>
+
+    <!-- Navegación con la misma presencia tipográfica que el resto del sitio -->
+    <nav class="pie__menu" aria-label="Pie de página">
+      {menu.map((item) => (
+        <a href={item.href}>{item.texto}</a>
+      ))}
+    </nav>
+
+    <!-- Redes sociales con la paleta sobria de la marca -->
+    <ul class="pie__redes">
+      {site.redes.map((red) => (
+        <li>
+          <a
+            href={red.url}
+            target="_blank"
+            rel="noopener"
+            aria-label={red.nombre}
+            title={red.nombre}
+          >
+            <Icon name={red.icono} size={22} />
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <!-- Texto FILM & SOUND STUDIO justo debajo de los iconos de redes sociales -->
+    <span class="pie__tag">FILM & SOUND STUDIO</span>
+
+    <!-- Cierre inferior: separador más delgado y copyright centrado -->
+    <div class="pie__cierre">
+      <p class="pie__copy">© {anio} {site.nombre} | Todos los derechos reservados</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .pie {
+    display: grid;
+    justify-items: center;
+    border-top: 1px solid var(--borde);
+    background: var(--negro);
+    overflow: hidden;
+  }
+
+  /* Cinta de servicios con letras de contorno que se desplaza sin fin */
+  .pie__cinta {
+    width: 100%;
+    overflow: hidden;
+    padding: clamp(20px, 3vw, 32px) 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+
+  .pie__cinta-pista {
+    display: flex;
+    width: max-content;
+    animation: cinta 45s linear infinite;
+  }
+
+  .pie__cinta:hover .pie__cinta-pista {
+    animation-play-state: paused;
+  }
+
+  .pie__cinta-grupo {
+    display: flex;
+    align-items: center;
+  }
+
+  .pie__cinta-item {
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-weight: 800;
+    font-style: italic;
+    font-size: clamp(36px, 6vw, 96px);
+    line-height: 1.1;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-stroke: 1.5px rgba(255, 255, 255, 0.26);
+    transition: -webkit-text-stroke-color 0.4s ease;
+    cursor: default;
+  }
+
+  .pie__cinta-item:hover {
+    -webkit-text-stroke-color: var(--acento);
+  }
+
+  .pie__cinta-item i {
+    font-style: normal;
+    margin-inline: clamp(14px, 2vw, 30px);
+    -webkit-text-stroke: 0;
+    color: var(--acento);
+  }
+
+  @keyframes cinta {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* Contenido central */
+  .pie__contenido {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    padding: clamp(36px, 4.5vw, 54px) var(--margen) 14px;
+    width: 100%;
+  }
+
+  /* Marca */
+  .pie__marca {
+    display: grid;
+    justify-items: center;
+  }
+
+  .pie__logo {
+    display: block;
+    line-height: 0;
+  }
+
+  .pie__logo img {
+    width: clamp(90px, 8vw, 125px);
+    height: auto;
+    transition: transform 0.5s var(--ease);
+  }
+
+  .pie__logo:hover img {
+    transform: rotate(-7deg) scale(1.05);
+  }
+
+  .pie__nombre {
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: clamp(22px, 2.8vw, 34px);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--texto);
+    margin-top: 18px;
+    line-height: 1.1;
+  }
+
+  .pie__lema {
+    font-family: var(--font-mono);
+    font-size: clamp(11px, 1.1vw, 13px);
+    font-weight: 700;
+    letter-spacing: 0.38em;
+    text-transform: uppercase;
+    color: var(--acento);
+    margin-top: 6px;
+  }
+
+  /* Menú de navegación */
+  .pie__menu {
+    display: flex;
+    gap: clamp(24px, 4vw, 52px);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: clamp(28px, 3.5vw, 38px);
+  }
+
+  .pie__menu a {
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: clamp(14px, 1.3vw, 17px);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--texto);
+    position: relative;
+    padding-bottom: 4px;
+    transition: color 0.3s var(--ease);
+  }
+
+  .pie__menu a::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 0;
+    height: 2px;
+    background: var(--acento);
+    transform: translateX(-50%);
+    transition: width 0.3s var(--ease);
+  }
+
+  .pie__menu a:hover {
+    color: var(--acento);
+  }
+
+  .pie__menu a:hover::after {
+    width: 100%;
+  }
+
+  /* Redes sociales */
+  .pie__redes {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: clamp(24px, 3vw, 32px);
+  }
+
+  .pie__redes a {
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 1px solid var(--borde);
+    color: var(--texto);
+    background: rgba(255, 255, 255, 0.02);
+    transition:
+      color 0.3s var(--ease),
+      border-color 0.3s var(--ease),
+      background 0.3s var(--ease),
+      transform 0.3s var(--ease);
+  }
+
+  .pie__redes a:hover {
+    color: var(--acento);
+    border-color: var(--acento);
+    background: rgba(224, 134, 64, 0.08);
+    transform: translateY(-3px);
+  }
+
+  /* Etiqueta FILM & SOUND STUDIO justo debajo de las redes */
+  .pie__tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.38);
+    margin-top: 12px;
+    display: inline-block;
+  }
+
+  /* Cierre inferior: separador más delgado y copyright centrado */
+  .pie__cierre {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .pie__copy {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.45);
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+</style>

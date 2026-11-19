@@ -1,0 +1,161 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import Icon from '../components/Icon.astro';
+import { whatsapp } from '../data/site';
+
+// Edita aquí cifras, valores y equipo
+const cifras = [
+  { numero: '+120', texto: 'Proyectos realizados' },
+  { numero: '+40', texto: 'Artistas y marcas' },
+  { numero: '5', texto: 'Años creando' },
+];
+const valores = [
+  { titulo: 'Creatividad', texto: 'Cada proyecto empieza con una idea propia, no con una plantilla.' },
+  { titulo: 'Calidad', texto: 'Equipo profesional de audio, video y fotografía en cada entrega.' },
+  { titulo: 'Compromiso', texto: 'Acompañamos todo el proceso, desde la idea hasta la publicación.' },
+];
+const equipo = [
+  { nombre: 'Nombre Apellido', rol: 'Director creativo', foto: '/media/equipo-chico.webp' },
+  { nombre: 'Nombre Apellido', rol: 'Productora musical', foto: '/media/equipo-chica.webp' },
+  { nombre: 'Nombre Apellido', rol: 'Fotografía y video', foto: '/img/equipo.svg' },
+];
+---
+<Base titulo="Nosotros" descripcion="Tú imagina y nosotros lo creamos.">
+  <PageHero imagen="/media/cabecera-nosotros.webp">
+    Tú imagina<br />y <span class="acento">nosotros</span><br />lo creamos
+  </PageHero>
+
+  <!-- Historia -->
+  <section class="historia contenedor">
+    <div class="historia__texto reveal">
+      <h2 class="titulo-l">Una productora hecha por creadores</h2>
+      <p class="texto-suave">Somos un equipo de productores, fotógrafos y realizadores audiovisuales. Escribe aquí la historia de la productora: cómo empezó, qué la hace diferente y qué tipo de proyectos les apasionan.</p>
+      <p class="texto-suave">Un segundo párrafo para hablar de la forma de trabajar, el estudio, el equipo técnico o los logros más importantes.</p>
+    </div>
+    <figure class="historia__foto reveal" data-delay="1">
+      <img src="/media/estudio.jpg" alt="Foto del estudio" width="900" height="1600" loading="lazy" />
+    </figure>
+  </section>
+
+  <!-- Cifras -->
+  <section class="cifras contenedor">
+    {cifras.map((c, i) => (
+      <div class="cifra reveal" data-delay={String(i)}>
+        <strong>{c.numero}</strong>
+        <span>{c.texto}</span>
+      </div>
+    ))}
+  </section>
+
+  <!-- Valores -->
+  <section class="valores contenedor">
+    {valores.map((v, i) => (
+      <article class="valor reveal" data-delay={String(i)}>
+        <span class="valor__num">{String(i + 1).padStart(2, '0')}</span>
+        <h3 class="titulo-m">{v.titulo}</h3>
+        <p class="texto-suave">{v.texto}</p>
+      </article>
+    ))}
+  </section>
+
+  <!-- Equipo -->
+  <section class="equipo contenedor">
+    <div class="reveal">
+      <span class="etiqueta">Equipo</span>
+      <h2 class="titulo-l">Las mentes detrás</h2>
+    </div>
+    <div class="equipo__grid">
+      {equipo.map((p, i) => (
+        <figure class="persona reveal" data-delay={String(i)}>
+          <img src={p.foto} alt={`Foto de ${p.nombre}`} width="800" height="1000" loading="lazy" />
+          <figcaption>
+            <strong>{p.nombre}</strong>
+            <span>{p.rol}</span>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
+
+  <!-- Llamado -->
+  <section class="llamado contenedor reveal">
+    <h2 class="titulo-l">¿Tienes una idea?<br /><span class="acento">Hagámosla realidad.</span></h2>
+    <a class="boton" href={whatsapp('Hola, tengo una idea y quiero hacerla realidad.')} target="_blank" rel="noopener">Escríbenos <Icon name="flecha" size={18} class="flecha" /></a>
+  </section>
+</Base>
+
+<style>
+  .historia {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: center;
+    padding: 40px 0 100px 64px;
+  }
+  .historia__texto { display: grid; gap: 22px; }
+  .historia__foto { margin: 0; border-radius: 20px; overflow: hidden; }
+  .historia__foto img { width: 100%; height: auto; transition: transform .8s var(--ease); }
+  .historia__foto:hover img { transform: scale(1.05); }
+
+  .cifras {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-block: 1px solid var(--borde);
+    padding-left: 64px;
+  }
+  .cifra { display: grid; gap: 6px; padding: 48px 24px; text-align: center; }
+  .cifra + .cifra { border-left: 1px solid var(--borde); }
+  .cifra strong { font-family: var(--font-display); font-stretch: var(--ancho-display); font-size: clamp(40px, 5vw, 72px); color: var(--texto); line-height: 1; }
+  .cifra span { color: var(--gris); text-transform: uppercase; letter-spacing: .14em; font-size: 13px; }
+
+  .valores {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 100px 0 100px 64px;
+  }
+  .valor {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+    padding: 36px;
+    border-radius: 20px;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    transition: border-color .4s, transform .4s var(--ease);
+  }
+  .valor:hover { border-color: var(--acento); transform: translateY(-6px); }
+  .valor__num { font-family: var(--font-display); font-stretch: var(--ancho-display); color: var(--texto); }
+
+  .equipo { display: grid; gap: 48px; padding: 0 0 100px 64px; }
+  .equipo__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .persona { margin: 0; display: grid; gap: 16px; }
+  .persona img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 20px; filter: grayscale(1); transition: filter .6s; }
+  .persona:hover img { filter: grayscale(0); }
+  .persona figcaption { display: grid; }
+  .persona strong { font-family: var(--font-display); font-stretch: var(--ancho-display); font-weight: 400; }
+  .persona span { color: var(--texto); font-size: 14px; }
+
+  .llamado {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: end;
+    gap: 32px;
+    padding: 0 0 120px 64px;
+  }
+
+  @media (max-width: 900px) {
+    .historia { grid-template-columns: 1fr; }
+    .valores, .equipo__grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 767px) {
+    .historia, .cifras, .valores, .equipo, .llamado { padding-left: 0; }
+    .historia { padding-block: 24px 64px; gap: 32px; }
+    .cifras { grid-template-columns: 1fr; }
+    .cifra + .cifra { border-left: 0; border-top: 1px solid var(--borde); }
+    .valores, .equipo__grid { grid-template-columns: 1fr; }
+    .valores { padding-block: 64px; }
+  }
+</style>

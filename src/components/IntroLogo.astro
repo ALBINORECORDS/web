@@ -1,0 +1,165 @@
+---
+/**
+ * LOGO ANIMADO DEL INICIO
+ * Va dentro del hero. Se reproduce cada vez que se entra a la página de inicio
+ * y, al terminar, el logo se queda en su lugar.
+ * Tiempos: en el script, cada paso tiene su número en milisegundos.
+ */
+---
+<div id="intro-logo" role="img" aria-label="Logo de Albiño Records">
+  <div class="il-stage">
+    <svg viewBox="0 0 560 760" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="il-shine" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0" />
+          <stop offset=".5" stop-color="#fff" stop-opacity=".9" />
+          <stop offset="1" stop-color="#fff" stop-opacity="0" />
+        </linearGradient>
+        <clipPath id="il-clip">
+          <path d="M38,345 L188,591 L213,547 L161,458 L193,457 L230,520 L256,475 L178,346 Z" />
+          <path d="M489,347 L361,347 L342,374 L302,443 L313,482 L287,474 L282,476 L201,613 L227,657 L302,529 L306,526 L326,536 L240,680 L265,724 Z" />
+          <path d="M35,284 L36,334 L39,336 L129,338 L70,285 Z" />
+          <path d="M118,284 L178,338 L259,338 L202,285 Z" />
+          <path d="M250,285 L309,339 L389,339 L332,285 Z" />
+          <path d="M472,285 L379,285 L439,340 L489,339 L490,286 Z" />
+          <path d="M98,99 L119,105 L234,73 L146,31 Z" />
+          <path d="M347,132 L282,100 L170,132 L234,164 Z" />
+          <path d="M459,192 L395,158 L283,189 L347,222 Z" />
+          <path d="M531,224 L506,214 L394,246 L472,285 L490,286 Z" />
+        </clipPath>
+      </defs>
+
+      <g class="il-logo">
+        <!-- A (izquierda) -->
+        <path class="il-piece il-A" fill-rule="evenodd" d="M38,345 L188,591 L213,547 L161,458 L193,457 L230,520 L256,475 L178,346 Z M120,390 L152,389 L166,413 L134,414 Z" />
+        <!-- R virada (derecha) -->
+        <path class="il-piece il-R" fill-rule="evenodd" d="M489,347 L361,347 L342,374 L302,443 L313,482 L287,474 L282,476 L201,613 L227,657 L302,529 L306,526 L326,536 L240,680 L265,724 Z M409,390 L409,395 L359,476 L350,450 L385,390 Z" />
+        <!-- Base del clip -->
+        <g class="il-bar">
+          <path class="il-piece" d="M35,284 L36,334 L39,336 L129,338 L70,285 Z" />
+          <path class="il-piece" d="M118,284 L178,338 L259,338 L202,285 Z" />
+          <path class="il-piece" d="M250,285 L309,339 L389,339 L332,285 Z" />
+          <path class="il-piece" d="M472,285 L379,285 L439,340 L489,339 L490,286 Z" />
+        </g>
+        <!-- Brazo del clip (gira en la bisagra) -->
+        <g class="il-arm">
+          <path d="M98,99 L119,105 L234,73 L146,31 Z" />
+          <path d="M347,132 L282,100 L170,132 L234,164 Z" />
+          <path d="M459,192 L395,158 L283,189 L347,222 Z" />
+          <path d="M531,224 L506,214 L394,246 L472,285 L490,286 Z" />
+        </g>
+      </g>
+      <g clip-path="url(#il-clip)">
+        <rect class="il-shine" x="-300" y="0" width="220" height="760" fill="url(#il-shine)" opacity="0" />
+      </g>
+    </svg>
+  </div>
+  <div class="il-flash"></div>
+</div>
+
+<!-- Sin JavaScript la animación no corre: se muestra el logo completo -->
+<noscript><style is:inline>.il-piece, .il-arm { opacity: 1 !important; }</style></noscript>
+
+<style>
+  #intro-logo {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+  }
+  /* Sube un poco para dejar sitio al nombre y al lema debajo */
+  .il-stage { width: min(40svh, 78vw, 400px); margin-bottom: 150px; }
+  #intro-logo svg { width: 100%; height: auto; overflow: visible; display: block; }
+  #intro-logo svg path { fill: #fff; }
+  /* Mientras no arranca la animación, las piezas quedan ocultas */
+  .il-piece, .il-arm { opacity: 0; }
+  .il-piece { transform-box: fill-box; transform-origin: center; }
+  .il-arm { transform-box: view-box; transform-origin: 487px 285px; } /* bisagra del clip */
+  .il-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+</style>
+
+<script>
+  function iniciarIntro() {
+    const intro = document.getElementById('intro-logo');
+    if (!intro || intro.dataset.listo) return;
+    intro.dataset.listo = '1';
+
+    const q = (s: string) => intro.querySelector(s) as SVGElement & HTMLElement;
+    const A = q('.il-A'), R = q('.il-R'), arm = q('.il-arm'), logo = q('.il-logo');
+    const bars = [...intro.querySelectorAll('.il-bar path')] as SVGElement[];
+    const flash = q('.il-flash'), shine = q('.il-shine');
+
+    const anim = (el: Element, kf: Keyframe[], opts: KeyframeAnimationOptions) =>
+      el.animate(kf, { fill: 'both', ...opts });
+    // Si la persona ya se fue a otra página, los pasos pendientes no se ejecutan
+    const at = (ms: number, fn: () => void) => window.setTimeout(() => { if (intro!.isConnected) fn(); }, ms);
+
+    // Sonido "clac" (los navegadores lo bloquean si la persona aún no ha tocado la página)
+    function clac() {
+      try {
+        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new Ctx();
+        if (ctx.state === 'suspended') { ctx.close(); return; }
+        const t = ctx.currentTime;
+        const len = Math.floor(ctx.sampleRate * 0.08);
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = 0.8;
+        const g = ctx.createGain(); g.gain.value = 0.9;
+        src.connect(bp).connect(g).connect(ctx.destination); src.start(t);
+        const o = ctx.createOscillator(), og = ctx.createGain();
+        o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.12);
+        og.gain.setValueAtTime(0.6, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+        o.connect(og).connect(ctx.destination); o.start(t); o.stop(t + 0.16);
+      } catch (e) {}
+    }
+
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      [A, R, arm, ...bars].forEach((el) => (el.style.opacity = '1'));
+      return;
+    }
+
+    const rebote = 'cubic-bezier(.2,.9,.3,1.25)';
+
+    // 1. La A y la R entran y forman el triángulo
+    anim(A, [{ transform: 'translate(-320px,260px) rotate(-35deg)', opacity: 0 }, { opacity: 1, offset: 0.4 },
+             { transform: 'translate(0,0) rotate(0)', opacity: 1 }], { duration: 800, delay: 150, easing: rebote });
+    anim(R, [{ transform: 'translate(320px,280px) rotate(35deg)', opacity: 0 }, { opacity: 1, offset: 0.4 },
+             { transform: 'translate(0,0) rotate(0)', opacity: 1 }], { duration: 800, delay: 320, easing: rebote });
+
+    // 2. Caen las franjas de la base del clip
+    bars.forEach((b, i) =>
+      anim(b, [{ transform: 'translateY(-140px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
+           { duration: 420, delay: 950 + i * 80, easing: rebote }));
+
+    // 3. El brazo aparece abierto de más
+    anim(arm, [{ transform: 'rotate(22deg)', opacity: 0 }, { transform: 'rotate(22deg)', opacity: 1 }],
+         { duration: 260, delay: 1350, easing: 'ease-out' });
+
+    // 4. ¡CLAC! El brazo cierra de golpe
+    at(1800, () => anim(arm, [{ transform: 'rotate(22deg)', opacity: 1 }, { transform: 'rotate(-24deg)', opacity: 1 }],
+                        { duration: 120, easing: 'cubic-bezier(.7,0,1,1)' }));
+    at(1920, () => {
+      clac();
+      anim(flash, [{ opacity: 0.45 }, { opacity: 0 }], { duration: 260, easing: 'ease-out' });
+      anim(logo, [{ transform: 'translate(0,0)' }, { transform: 'translate(-6px,4px)' }, { transform: 'translate(5px,-3px)' },
+                  { transform: 'translate(-3px,2px)' }, { transform: 'translate(0,0)' }], { duration: 220 });
+    });
+
+    // 5. El brazo rebota y queda como en el logo
+    at(2050, () => anim(arm, [{ transform: 'rotate(-24deg)', opacity: 1 }, { transform: 'rotate(0deg)', opacity: 1 }],
+                        { duration: 650, easing: 'cubic-bezier(.3,1.5,.5,1)' }));
+
+    // 6. Brillo que recorre el logo
+    at(2650, () => anim(shine, [{ transform: 'skewX(-20deg) translateX(0)', opacity: 1 },
+                                { transform: 'skewX(-20deg) translateX(1100px)', opacity: 1 }],
+                        { duration: 900, easing: 'ease-in-out' }));
+  }
+
+  // Con las transiciones de página de Astro, se inicia cada vez que se llega al inicio
+  document.addEventListener('astro:page-load', iniciarIntro);
+  iniciarIntro();
+</script>

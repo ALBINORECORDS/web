@@ -1,0 +1,77 @@
+---
+import '@fontsource-variable/saira/standard.css';
+import '@fontsource/courier-prime/700.css';
+import '../styles/global.css';
+import { ClientRouter, fade } from 'astro:transitions';
+import Nav from '../components/Nav.astro';
+import PieCuero from '../components/PieCuero.astro';
+import { site } from '../data/site';
+
+// pie: false cuando la página ya trae el pie dentro (el inicio, en Fundacion)
+interface Props { titulo?: string; descripcion?: string; pie?: boolean }
+const { titulo, descripcion = `${site.nombre} – ${site.lema}`, pie = true } = Astro.props;
+const tituloCompleto = titulo ? `${titulo} | ${site.nombre}` : `${site.nombre} – ${site.lema}`;
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{tituloCompleto}</title>
+    <meta name="description" content={descripcion} />
+    <meta property="og:title" content={tituloCompleto} />
+    <meta property="og:description" content={descripcion} />
+    <link rel="icon" href="/media/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/media/favicon.png" type="image/png" sizes="64x64" />
+    <link rel="apple-touch-icon" href="/media/apple-touch-icon.png" />
+    <!-- Transiciones suaves entre páginas: el menú se conserva y el contenido cambia con un fundido -->
+    <ClientRouter />
+    <!-- Sin JavaScript el menú se muestra en su posición fija -->
+    <noscript><style>.nav__menu { visibility: visible !important; }</style></noscript>
+  </head>
+  <body>
+    <Nav />
+    <main transition:animation={fade({ duration: '.45s' })}>
+      <slot />
+    </main>
+    {pie && <PieCuero />}
+
+    <script>
+      // Al recargar, la página empieza arriba: el ClientRouter recuerda la posición y sin esto
+      // se vuelve a la sección donde se estaba. Atrás y Adelante, y los enlaces con #, no cambian.
+      const navegacion = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+      if (navegacion?.type === 'reload' && !location.hash) {
+        const arriba = () => window.scrollTo({ top: 0, behavior: 'instant' });
+        arriba();
+        document.addEventListener('astro:page-load', () => { arriba(); requestAnimationFrame(arriba); }, { once: true });
+      }
+
+      // Aparición al entrar en pantalla: cualquier elemento con .reveal o [data-anim].
+      // Con las transiciones de página el script corre una sola vez, por eso se
+      // vuelve a buscar los elementos en cada página nueva (astro:page-load).
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add('is-visible');
+              io.unobserve(e.target);
+            }
+          }
+        },
+        { threshold: 0.2 }
+      );
+      document.addEventListener('astro:page-load', () => {
+        document.querySelectorAll('.reveal, [data-anim]').forEach((el) => io.observe(el));
+
+        // Los videos que llegan con el cambio de página quedan "sin fuente" en el
+        // navegador: se recargan para que vuelvan a funcionar (y arrancan si son autoplay).
+        document.querySelectorAll('video').forEach((v) => {
+          if (v.error || v.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+            v.load();
+            if (v.autoplay) v.play().catch(() => {});
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

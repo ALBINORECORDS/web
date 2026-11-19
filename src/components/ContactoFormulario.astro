@@ -1,0 +1,532 @@
+---
+// Formulario de contacto.
+// Izquierda: titular que se enciende palabra por palabra con el scroll (WordReveal) y canales
+// directos que se llenan con los colores de su red en persianas al pasar el mouse (BlindRows). Derecha: el formulario; al enviarlo, un diafragma de cámara
+// (ApertureBlades) se cierra sobre la tarjeta y se abre con la confirmación.
+// El envío va a FormSubmit (`site.envioFormulario`), que lo reenvía a `site.correo`. Si falla o está
+// vacío, se abre el correo de la persona con el mensaje escrito para que no se pierda.
+import Icon from './Icon.astro';
+import { site, whatsapp } from '../data/site';
+import { servicios } from '../data/servicios';
+
+const frase = 'Cuéntanos tu idea y la convertimos en algo que se ve, se escucha y se siente.';
+const instagram = site.redes.find((r) => r.icono === 'instagram')!;
+const tiktok = site.redes.find((r) => r.icono === 'tiktok')!;
+const facebook = site.redes.find((r) => r.icono === 'facebook')!;
+// color: fondo que entra en persianas al pasar el mouse, con los colores de cada red
+const canales = [
+  { nombre: 'WhatsApp', detalle: 'Respuesta inmediata', icono: 'whatsapp', href: whatsapp('Hola, quiero cotizar un proyecto con Albiño Records.'), color: 'linear-gradient(120deg, #25D366, #128C7E)' },
+  { nombre: 'Correo', detalle: site.correo, icono: 'mail', href: `mailto:${site.correo}`, color: 'linear-gradient(100deg, #ffffff 35%, #fbe0dd 62%, #EA4335)', claro: true },
+  { nombre: 'Instagram', detalle: '@albino_recordss', icono: 'instagram', href: instagram.url, color: 'linear-gradient(100deg, #FEDA75, #FA7E1E 25%, #D62976 50%, #962FBF 75%, #4F5BD5)' },
+  { nombre: 'TikTok', detalle: '@albino_records', icono: 'tiktok', href: tiktok.url, color: 'linear-gradient(100deg, #25F4EE, #111 42%, #111 58%, #FE2C55)' },
+  { nombre: 'Facebook', detalle: 'Albiño Records', icono: 'facebook', href: facebook.url, color: 'linear-gradient(120deg, #1877F2, #0B4DB8)' },
+] as const;
+const opciones = [...servicios.map((s) => s.titulo), 'Otro'];
+const MAX = 600;
+const PERSIANAS = 8;
+---
+<section id="formulario" class="contacto contenedor" data-contacto data-envio={site.envioFormulario} data-correo={site.correo}>
+  <!-- ===================== Lado izquierdo ===================== -->
+  <div class="contacto__info">
+    <h2 class="contacto__frase titulo-l" data-palabras>
+      {frase.split(' ').map((p) => <span>{p} </span>)}
+    </h2>
+
+    <ul class="canales">
+      {canales.map((c, i) => (
+        <li class="reveal" data-delay={String(i)}>
+          <a class:list={['canal', { 'canal--claro': 'claro' in c }]} href={c.href} target={c.href.startsWith('mailto') ? undefined : '_blank'} rel="noopener">
+            <span class="canal__fondo" aria-hidden="true" style={`--color:${c.color}`}>
+              <span class="canal__persianas">
+                {Array.from({ length: PERSIANAS }, (_, n) => <i style={`--n:${n}`}></i>)}
+              </span>
+            </span>
+            <Icon name={c.icono} size={22} class="canal__icono" />
+            <span class="canal__nombre">{c.nombre}</span>
+            <span class="canal__detalle">{c.detalle}</span>
+            <Icon name="flecha" size={20} class="canal__flecha" />
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <!-- ===================== Formulario ===================== -->
+  <div class="tarjeta reveal" data-delay="1">
+    <form class="formulario" data-formulario novalidate>
+      <div class="formulario__fila">
+        <label class="campo">
+          <input name="nombre" type="text" autocomplete="name" placeholder=" " required minlength="2" />
+          <span class="campo__etiqueta">Tu nombre</span>
+          <span class="campo__linea" aria-hidden="true"></span>
+          <span class="campo__error">Escribe tu nombre</span>
+        </label>
+        <label class="campo">
+          <input name="correo" type="email" autocomplete="email" placeholder=" " required />
+          <span class="campo__etiqueta">Tu correo</span>
+          <span class="campo__linea" aria-hidden="true"></span>
+          <span class="campo__error">Escribe un correo válido</span>
+        </label>
+      </div>
+      <label class="campo">
+        <input name="telefono" type="tel" autocomplete="tel" placeholder=" " />
+        <span class="campo__etiqueta">Teléfono o WhatsApp <small>(opcional)</small></span>
+        <span class="campo__linea" aria-hidden="true"></span>
+      </label>
+
+      <fieldset class="opciones">
+        <legend>¿Qué necesitas?</legend>
+        {opciones.map((o, i) => (
+          <label class="opcion">
+            <input type="radio" name="servicio" value={o} checked={i === 0} />
+            <span>{o}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      <label class="campo campo--area">
+        <textarea name="mensaje" rows="3" placeholder=" " required minlength="10" maxlength={MAX}></textarea>
+        <span class="campo__etiqueta">Cuéntanos de tu proyecto</span>
+        <span class="campo__linea" aria-hidden="true"></span>
+        <span class="campo__error">Cuéntanos un poco más (mínimo 10 letras)</span>
+        <span class="campo__cuenta" aria-hidden="true"><b data-cuenta>0</b>/{MAX}</span>
+      </label>
+
+      <!-- Trampa para robots: las personas no la ven -->
+      <input class="formulario__trampa" type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+      <div class="formulario__pie">
+        <button class="boton magnetico formulario__enviar" type="submit">
+          <span data-texto-boton>Enviar mensaje</span>
+          <Icon name="flecha" size={18} class="flecha" />
+        </button>
+      </div>
+      <p class="formulario__estado" role="status" aria-live="polite" data-estado-envio></p>
+    </form>
+
+    <!-- Confirmación: aparece cuando el diafragma se abre -->
+    <div class="gracias" data-gracias hidden>
+      <span class="etiqueta">Mensaje enviado</span>
+      <h3 class="titulo-l">¡Gracias, <span data-gracias-nombre>amigo</span>!</h3>
+      <p class="texto-suave" data-gracias-texto>Ya tenemos tu idea. Te escribimos muy pronto.</p>
+      <button class="boton boton--linea" type="button" data-otro>Enviar otro mensaje</button>
+    </div>
+
+    <!-- Diafragma de cámara (ApertureBlades) -->
+    <div class="diafragma" aria-hidden="true">
+      <svg viewBox="-1000 -1000 2000 2000" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <linearGradient id="diafragma-metal">
+            <stop offset="0" stop-color="#f3b27a" />
+            <stop offset=".5" stop-color="#E08640" />
+            <stop offset="1" stop-color="#8a4512" />
+          </linearGradient>
+        </defs>
+        {Array.from({ length: 8 }, () => (
+          <path d="M0 0 Q320 -240 680 -560 L2400 -1100 L2400 1100 Q920 500 0 0 Z" fill="url(#diafragma-metal)" stroke="#f3b27a" stroke-width="2" />
+        ))}
+      </svg>
+      <span class="diafragma__texto">¡Recibido!</span>
+    </div>
+  </div>
+</section>
+
+<style>
+  .contacto {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: clamp(32px, 5vw, 80px);
+    align-items: center;
+    /* toda la sección cabe en una pantalla */
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 88px 0 40px 64px;
+  }
+
+  /* ---------- Lado izquierdo ---------- */
+  .contacto__info { display: grid; gap: 22px; }
+  .contacto__frase.titulo-l { font-size: clamp(20px, 2.4vw, 34px); font-weight: 500; letter-spacing: .01em; line-height: 1.2; }
+  .contacto__frase span { opacity: .18; transition: opacity .25s; }
+  .contacto__frase.sin-scroll span { opacity: 1; }
+
+  /* Canales: el color de cada red entra en persianas al pasar el mouse */
+  .canales { display: grid; border-bottom: 1px solid var(--borde); }
+  .canal {
+    position: relative;
+    display: grid;
+    grid-template-columns: 26px 1fr auto 24px;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--borde);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .canal__fondo { position: absolute; inset: 0; z-index: -1; }
+  /* color de la red con un velo oscuro para que el texto blanco se lea */
+  .canal__fondo { background: linear-gradient(rgba(0, 0, 0, .18), rgba(0, 0, 0, .18)), var(--color); }
+  .canal__persianas { position: absolute; inset: 0; display: grid; grid-template-rows: repeat(8, 1fr); }
+  .canal__persianas i {
+    background: var(--negro);
+    margin-bottom: -1px;
+    transform-origin: top;
+    transition: transform .55s calc(var(--n) * .03s) cubic-bezier(.76, 0, .24, 1);
+  }
+  .canal:hover .canal__persianas i, .canal:focus-visible .canal__persianas i { transform: scaleY(0); }
+  .canal__nombre {
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-weight: 500;
+    font-size: clamp(17px, 1.6vw, 21px);
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    transition: transform .5s var(--ease);
+  }
+  .canal__detalle { font-size: 14px; opacity: .65; transition: opacity .3s; text-align: right; overflow-wrap: anywhere; }
+  .canal :global(.canal__flecha) { transition: transform .4s var(--ease), color .3s; }
+  .canal:hover .canal__nombre { transform: translateX(8px); }
+  .canal:hover :global(.canal__flecha) { transform: rotate(-45deg); }
+  .canal:hover .canal__detalle { opacity: 1; }
+  /* Correo: fondo blanco y rojo, sin velo; el texto pasa a oscuro y el sobre a rojo */
+  .canal--claro .canal__fondo { background: var(--color); }
+  .canal--claro > :not(.canal__fondo) { transition: color .4s .1s, transform .5s var(--ease); }
+  .canal--claro:hover, .canal--claro:focus-visible { color: #202124; }
+  .canal--claro:is(:hover, :focus-visible) :global(.canal__icono) { color: #EA4335; }
+  .canal--claro:is(:hover, :focus-visible) :global(.canal__flecha) { color: #fff; }
+
+  /* ---------- Tarjeta del formulario ---------- */
+  .tarjeta {
+    position: relative;
+    border-radius: 24px;
+    /* cristal claro: casi transparente, poco desenfoque para que se vean las estrellas detrás,
+       reflejo diagonal y bordes con brillo */
+    background:
+      linear-gradient(125deg, rgba(255, 255, 255, .1) 0%, rgba(255, 255, 255, 0) 32%),
+      linear-gradient(150deg, rgba(255, 255, 255, .045), rgba(255, 255, 255, .01) 50%, rgba(255, 255, 255, .03));
+    -webkit-backdrop-filter: blur(5px) saturate(150%);
+    backdrop-filter: blur(5px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, .2);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), inset 0 0 0 1px rgba(255, 255, 255, .04), inset 0 -1px 0 rgba(255, 255, 255, .08), 0 30px 60px rgba(0, 0, 0, .35);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .formulario { display: grid; gap: 18px; padding: clamp(22px, 2.6vw, 36px); }
+  .formulario__fila { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+
+  .campo { position: relative; display: block; padding-top: 14px; }
+  .campo input, .campo textarea {
+    width: 100%;
+    padding: 6px 0 8px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--borde);
+    border-radius: 0;
+    color: var(--texto);
+    font: inherit;
+    font-size: 15px;
+    outline: none;
+    resize: none;
+  }
+  .campo__etiqueta {
+    position: absolute;
+    left: 0;
+    top: 20px;
+    font-size: 15px;
+    opacity: .6;
+    pointer-events: none;
+    transform-origin: left;
+    transition: transform .35s var(--ease), opacity .35s, color .35s;
+  }
+  .campo__etiqueta small { font-size: .85em; opacity: .7; }
+  .campo input:focus ~ .campo__etiqueta,
+  .campo input:not(:placeholder-shown) ~ .campo__etiqueta,
+  .campo textarea:focus ~ .campo__etiqueta,
+  .campo textarea:not(:placeholder-shown) ~ .campo__etiqueta {
+    transform: translateY(-20px) scale(.8);
+    opacity: .75;
+  }
+  .campo input:focus ~ .campo__etiqueta, .campo textarea:focus ~ .campo__etiqueta { color: var(--acento); }
+  .campo__linea {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    margin-top: -2px;
+    background: var(--acento);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .6s var(--ease);
+  }
+  .campo input:focus ~ .campo__linea, .campo textarea:focus ~ .campo__linea { transform: scaleX(1); }
+  .campo__error {
+    display: block;
+    height: 0;
+    overflow: hidden;
+    color: #ff7a6b;
+    font-size: 13px;
+    transition: height .3s;
+  }
+  .campo.is-error .campo__error { height: 22px; margin-top: 6px; }
+  .campo.is-error .campo__linea { background: #ff7a6b; transform: scaleX(1); }
+  .campo.is-error { animation: temblar .45s; }
+  .campo__cuenta {
+    position: absolute;
+    right: 0;
+    top: 0;
+    font-size: 12px;
+    opacity: .45;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Pastillas de servicio */
+  .opciones { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; border: 0; }
+  .opciones legend {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 0;
+    font-size: 14px;
+    opacity: .75;
+  }
+  .opcion { position: relative; cursor: pointer; }
+  .opcion input { position: absolute; opacity: 0; pointer-events: none; }
+  .opcion span {
+    display: inline-block;
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, .16);
+    background: rgba(255, 255, 255, .03);
+    font-size: 13px;
+    transition: background .3s, border-color .3s, color .3s, transform .3s var(--ease);
+  }
+  .opcion:hover span { border-color: var(--acento); }
+  .opcion input:checked + span { background: var(--acento); border-color: var(--acento); color: var(--negro); font-weight: 500; }
+  .opcion input:focus-visible + span { outline: 2px solid var(--acento); outline-offset: 3px; }
+
+  .formulario__trampa { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  .formulario__pie { display: flex; flex-wrap: wrap; align-items: center; gap: 18px 24px; }
+  .formulario__nota { font-size: 14px; opacity: .7; }
+  .formulario__enviar[disabled] { opacity: .6; cursor: progress; }
+  .formulario__estado:empty { display: none; }
+  .formulario__estado { color: #ff7a6b; font-size: 14px; }
+
+  /* Confirmación */
+  .gracias {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 18px;
+    padding: 40px;
+    text-align: center;
+    background: rgba(14, 14, 14, .55);
+  }
+  .gracias[hidden] { display: none; }
+  .gracias h3 span { color: var(--acento); }
+
+  /* Diafragma */
+  .diafragma {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .diafragma svg { width: 100%; height: 100%; display: block; }
+  .diafragma__texto {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-weight: 700;
+    font-size: clamp(34px, 5vw, 64px);
+    text-transform: uppercase;
+    color: var(--negro);
+    opacity: 0;
+  }
+
+  @keyframes temblar { 20%, 60% { transform: translateX(-6px); } 40%, 80% { transform: translateX(6px); } }
+
+  /* Pantallas medianas: el detalle baja debajo del nombre para no partirse */
+  @media (min-width: 1001px) and (max-width: 1200px) {
+    .canal { grid-template-columns: 22px 1fr 20px; row-gap: 2px; }
+    .canal__detalle { grid-column: 2; grid-row: 2; text-align: left; }
+    .canal :global(.canal__flecha) { grid-column: 3; grid-row: 1; }
+  }
+  @media (max-width: 1000px) {
+    .contacto { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 767px) {
+    .contacto { padding: 72px 0 64px; min-height: 0; }
+    .formulario__fila { grid-template-columns: 1fr; }
+    .canal { grid-template-columns: 22px 1fr 20px; padding: 18px 10px; gap: 12px; }
+    .canal__detalle { grid-column: 2; grid-row: 2; text-align: left; margin-top: -10px; }
+    .canal :global(.canal__flecha) { grid-column: 3; grid-row: 1; }
+  }
+</style>
+
+<script>
+  // Con las transiciones de página este script corre una sola vez:
+  // la sección se vuelve a buscar en cada página (astro:page-load).
+  const conMovimiento = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (n: number) => Math.max(0, Math.min(1, n));
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+
+  let seccion: HTMLElement | null = null;
+  let palabras: HTMLElement[] = [];
+  let frase: HTMLElement | null = null;
+
+  // ---------- Frase palabra por palabra (WordReveal) ----------
+  const TENUE = 0.18;
+  const SUAVE = 2.5;
+  let pedido = 0;
+  function pintarFrase() {
+    pedido = 0;
+    if (!frase) return;
+    const caja = frase.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const avance = clamp((vh * 0.85 - caja.top) / (caja.height + vh * 0.35));
+    const cabeza = avance * (palabras.length + SUAVE);
+    palabras.forEach((p, i) => { p.style.opacity = (TENUE + (1 - TENUE) * smooth(clamp((cabeza - i) / SUAVE))).toFixed(3); });
+  }
+  const pedirFrase = () => { if (!pedido && frase) pedido = requestAnimationFrame(pintarFrase); };
+  if (conMovimiento) window.addEventListener('scroll', pedirFrase, { passive: true });
+
+  // ---------- Diafragma (ApertureBlades) ----------
+  const DISTANCIA = 2700;
+  function diafragma(tarjeta: HTMLElement, alCerrar: () => void) {
+    const capa = tarjeta.querySelector<HTMLElement>('.diafragma')!;
+    const svg = capa.querySelector('svg')!;
+    const hojas = [...capa.querySelectorAll('path')];
+    const texto = capa.querySelector<HTMLElement>('.diafragma__texto')!;
+    const DURA = 2200;
+    let cambiado = false;
+    const inicio = performance.now();
+    capa.style.visibility = 'visible';
+    const fase = (p: number, a: number, b: number) => clamp((p - a) / (b - a));
+    function cuadro(ahora: number) {
+      const p = clamp((ahora - inicio) / DURA);
+      const cierre = smooth(fase(p, 0, 0.38)) * (1 - smooth(fase(p, 0.62, 1)));
+      const giro = Math.sin(p * Math.PI);
+      svg.style.transform = `perspective(1400px) rotateX(${giro * 9}deg) rotateY(${giro * -8}deg) scale(1.15)`;
+      texto.style.opacity = String(smooth(fase(cierre, 0.8, 1)));
+      hojas.forEach((h, i) => h.setAttribute('transform', `rotate(${i * 45 + p * 55}) translate(${(1 - cierre) * DISTANCIA} 0)`));
+      if (!cambiado && p >= 0.5) { cambiado = true; alCerrar(); }
+      if (p < 1) requestAnimationFrame(cuadro);
+      else capa.style.visibility = 'hidden';
+    }
+    requestAnimationFrame(cuadro);
+  }
+
+  // ---------- Envío ----------
+  // Devuelve true si el servicio lo envió, false si se abrió el correo de la persona
+  async function enviar(form: HTMLFormElement, envio: string, correo: string) {
+    const datos = new FormData(form);
+    if (datos.get('_honey')) return true; // robot: se finge el envío
+    const nombre = String(datos.get('nombre')).trim();
+    const servicio = String(datos.get('servicio'));
+    if (envio) {
+      try {
+        datos.append('_subject', `Nuevo mensaje de ${nombre} · ${servicio}`);
+        datos.append('_replyto', String(datos.get('correo')));
+        datos.append('_template', 'table');
+        datos.append('_captcha', 'false');
+        const r = await fetch(envio, { method: 'POST', body: datos, headers: { Accept: 'application/json' } });
+        const respuesta = await r.json().catch(() => ({}));
+        // FormSubmit responde 200 con success "false" mientras el correo no esté activado
+        if (r.ok && String(respuesta.success) !== 'false') return true;
+      } catch {
+        // sin conexión o servicio caído: sigue al correo de la persona
+      }
+    }
+    const tel = String(datos.get('telefono') || '').trim();
+    const cuerpo = `Hola, soy ${nombre}.
+
+Servicio: ${servicio}
+${tel ? `Teléfono: ${tel}
+` : ''}Correo: ${datos.get('correo')}
+
+${datos.get('mensaje')}`;
+    window.location.href = `mailto:${correo}?subject=${encodeURIComponent(`Proyecto · ${servicio}`)}&body=${encodeURIComponent(cuerpo)}`;
+    return false;
+  }
+
+  function validar(campo: HTMLInputElement | HTMLTextAreaElement) {
+    const caja = campo.closest('.campo')!;
+    const ok = campo.value.trim().length > 0 ? campo.checkValidity() : !campo.required;
+    caja.classList.remove('is-error');
+    if (!ok) { void (caja as HTMLElement).offsetWidth; caja.classList.add('is-error'); }
+    return ok;
+  }
+
+  function iniciarFormulario() {
+    const tarjeta = seccion!.querySelector<HTMLElement>('.tarjeta')!;
+    const form = tarjeta.querySelector<HTMLFormElement>('[data-formulario]')!;
+    if (form.dataset.listo) return;
+    form.dataset.listo = '1';
+    const gracias = tarjeta.querySelector<HTMLElement>('[data-gracias]')!;
+    const boton = form.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    const textoBoton = boton.querySelector('[data-texto-boton]')!;
+    const estado = form.querySelector('[data-estado-envio]')!;
+    const mensaje = form.querySelector<HTMLTextAreaElement>('textarea')!;
+    const cuenta = form.querySelector('[data-cuenta]')!;
+    const envio = seccion!.dataset.envio || '';
+    const correo = seccion!.dataset.correo || '';
+
+    mensaje.addEventListener('input', () => { cuenta.textContent = String(mensaje.value.length); });
+    form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[required], textarea[required]').forEach((c) => {
+      c.addEventListener('blur', () => { if (c.value) validar(c); });
+      c.addEventListener('input', () => { if (c.closest('.campo')!.classList.contains('is-error')) validar(c); });
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      estado.textContent = '';
+      const campos = [...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[required], textarea[required]')];
+      const malos = campos.filter((c) => !validar(c));
+      if (malos.length) { malos[0].focus(); return; }
+
+      boton.disabled = true;
+      textoBoton.textContent = 'Enviando…';
+      try {
+        const enviado = await enviar(form, envio, correo);
+        const nombre = String(new FormData(form).get('nombre')).trim().split(' ')[0];
+        tarjeta.querySelector('[data-gracias-nombre]')!.textContent = nombre;
+        tarjeta.querySelector('[data-gracias-texto]')!.textContent = enviado
+          ? 'Ya tenemos tu idea. Te escribimos muy pronto.'
+          : 'Abrimos tu correo con el mensaje listo: solo dale enviar.';
+        const mostrar = () => { gracias.hidden = false; form.style.visibility = 'hidden'; };
+        if (conMovimiento) diafragma(tarjeta, mostrar); else mostrar();
+        if (enviado) form.reset();
+      } catch {
+        estado.textContent = 'No se pudo enviar. Inténtalo de nuevo o escríbenos por WhatsApp.';
+      } finally {
+        boton.disabled = false;
+        textoBoton.textContent = 'Enviar mensaje';
+        cuenta.textContent = String(mensaje.value.length);
+      }
+    });
+
+    tarjeta.querySelector('[data-otro]')!.addEventListener('click', () => {
+      gracias.hidden = true;
+      form.style.visibility = '';
+      form.querySelector<HTMLInputElement>('input[name=nombre]')!.focus();
+    });
+  }
+
+  function iniciar() {
+    seccion = document.querySelector<HTMLElement>('[data-contacto]');
+    if (!seccion) { frase = null; return; }
+    frase = seccion.querySelector<HTMLElement>('[data-palabras]');
+    palabras = [...frase!.querySelectorAll<HTMLElement>('span')];
+    if (!conMovimiento) frase!.classList.add('sin-scroll');
+    else pintarFrase();
+    iniciarFormulario();
+  }
+  // Si este script llega con una página nueva, puede cargarse después del aviso
+  // de "página lista": por eso también se inicia en cuanto se ejecuta.
+  iniciar();
+  document.addEventListener('astro:page-load', iniciar);
+</script>

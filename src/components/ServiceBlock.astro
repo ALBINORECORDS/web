@@ -1,0 +1,343 @@
+---
+// Bloque de servicio a pantalla completa con imagen de fondo.
+// La imagen se abre en persianas horizontales al entrar (BlindsStatement de plantilla-react)
+// y el bloque se queda fijo un tramo de scroll mientras el fondo sube. Cuando la imagen ya
+// casi está abierta entra el contenido, con la animación de `servicio.anim` (src/data/servicios.ts).
+// Las persianas son franjas negras que solo usan transform: una máscara repinta la imagen
+// en cada cuadro y hace que el scroll se trabe.
+import Icon from './Icon.astro';
+import type { Servicio } from '../data/servicios';
+import { whatsapp } from '../data/site';
+
+// numero: posición del bloque (solo se usa para alternar el lado)
+interface Props { servicio: Servicio; numero: number }
+const { servicio, numero } = Astro.props;
+const lado = numero % 2 === 0 ? 'der' : 'izq';
+const galeria = servicio.galeria ?? [];
+---
+<section id={servicio.id} class={`bloque bloque--${lado}`} data-entrada={servicio.anim}>
+  <div class="bloque__escena">
+    <div class="bloque__imagen">
+      <div class="bloque__fondo" style={`background-image: url('${servicio.imagen}')`}></div>
+    </div>
+    <div class="bloque__persianas" aria-hidden="true">
+      {Array.from({ length: 8 }, () => <i></i>)}
+    </div>
+    <div class="bloque__velo"></div>
+
+    <div class:list={['contenedor', 'bloque__dentro', { 'con-galeria': galeria.length }]}>
+      <div class="bloque__contenido">
+        <h2 class="titulo-l">{servicio.titulo}</h2>
+        <p class="bloque__texto">{servicio.texto}</p>
+        <a class="boton" href={whatsapp(`Hola, quiero cotizar: ${servicio.titulo}.`)} target="_blank" rel="noopener">
+          Cotizar <Icon name="flecha" size={18} class="flecha" />
+        </a>
+      </div>
+
+      {galeria.length > 0 && (
+        <div class:list={['galeria', { 'galeria--grande': servicio.galeriaGrande }]} style={`--n: ${galeria.length}`}>
+          {galeria.map((item, i) => (
+            <figure class="galeria__item" style={`--i: ${i}`}>
+              {item.tipo === 'video' ? (
+                <video src={item.src} poster={item.poster} muted loop playsinline preload="none" aria-label={item.alt} />
+              ) : (
+                <img src={item.src} alt={item.alt} loading="lazy" />
+              )}
+            </figure>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .bloque {
+    --pausa: 140svh;              /* scroll que el bloque se queda fijo */
+    position: relative;
+    background: var(--negro);
+  }
+  /* Espacio que deja al bloque fijo mientras se hace scroll */
+  .bloque::after { content: ""; display: block; height: var(--pausa); }
+  /* Si no cabe en la pantalla no se fija: se recorre con scroll normal */
+  .bloque--alto::after { display: none; }
+
+  .bloque__escena {
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .bloque__imagen {
+    position: absolute;
+    inset: 0;
+    z-index: -3;
+    overflow: hidden;
+  }
+  .bloque__fondo {
+    position: absolute;
+    inset: 0 0 -24%;                /* imagen más alta que la escena: es lo que sube el fondo */
+    background-size: cover;
+    background-position: center;
+    will-change: transform;
+  }
+  /* Cada franja negra se encoge hacia abajo y deja ver la imagen */
+  .bloque__persianas {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    display: grid;
+    grid-template-rows: repeat(8, 1fr);
+    pointer-events: none;
+  }
+  .bloque__persianas i {
+    margin-bottom: -1px;            /* sin rendijas con la persiana cerrada */
+    background: var(--negro);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    will-change: transform;
+  }
+  .bloque__velo {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(90deg, rgba(0, 0, 0, .88) 0%, rgba(0, 0, 0, .55) 50%, rgba(0, 0, 0, .15) 100%);
+  }
+  .bloque--der .bloque__velo { transform: scaleX(-1); }
+
+  .bloque__dentro { padding-block: 120px; }
+  .bloque__dentro.con-galeria {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 48px;
+  }
+  .bloque--der .con-galeria .galeria { order: -1; }
+
+  .bloque__contenido { display: grid; gap: 22px; justify-items: start; }
+  .bloque__contenido > * { max-width: 560px; }
+  .bloque--der .bloque__contenido { justify-items: end; text-align: right; }
+
+  /* ---------- Galería de fotos / videos verticales ---------- */
+  .galeria {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+  }
+  .galeria__item {
+    margin: 0;
+    flex: 0 1 calc(min(100%, 640px) / var(--n) - 14px);
+    max-width: 260px;
+    aspect-ratio: 9 / 16;
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid var(--borde);
+    background: #111;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, .6);
+    /* entrada escalonada al aparecer el bloque */
+    opacity: 0;
+    transform: translateY(60px) rotate(calc((var(--i) - (var(--n) - 1) / 2) * 3deg));
+    transition: opacity 1s var(--ease), transform 1.1s var(--ease);
+    transition-delay: calc(.25s + var(--i) * .12s);
+  }
+  .galeria__item:nth-child(even) { margin-top: 48px; }
+  .bloque.is-visible .galeria__item { opacity: 1; transform: rotate(calc((var(--i) - (var(--n) - 1) / 2) * 3deg)); }
+  .galeria__item:hover { transform: scale(1.04) !important; }
+  .galeria__item img,
+  .galeria__item video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .bloque__texto { font-size: 18px; color: var(--texto); }
+
+  /* ---------- Animaciones de entrada (una por tipo) ---------- */
+  .bloque__contenido > * { transition: opacity 1s var(--ease), transform 1s var(--ease), clip-path 1.2s var(--ease); }
+  .bloque__contenido > :nth-child(2) { transition-delay: .1s; }
+  .bloque__contenido > :nth-child(3) { transition-delay: .2s; }
+  .bloque__contenido > :nth-child(4) { transition-delay: .3s; }
+  .bloque__contenido > :nth-child(5) { transition-delay: .4s; }
+
+  [data-entrada="izquierda"] .bloque__contenido > * { opacity: 0; transform: translateX(-80px); }
+  [data-entrada="derecha"] .bloque__contenido > * { opacity: 0; transform: translateX(80px); }
+  [data-entrada="zoom"] .bloque__contenido > * { opacity: 0; transform: scale(.85); }
+  [data-entrada="subir"] .bloque__contenido > * { opacity: 0; transform: translateY(80px); }
+  [data-entrada="cortina"] .bloque__contenido > * { clip-path: inset(0 100% 0 0); }
+  [data-entrada].is-visible .bloque__contenido > * { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+
+  /* Las fotos se ajustan al alto de la pantalla para que el bloque quepa y se pueda fijar */
+  @media (min-width: 1025px) {
+    .galeria__item { max-width: min(260px, calc((100svh - 300px) * 9 / 16)); }
+    /* Columna de la galería más ancha y fotos que crecen hasta el tope de alto de la pantalla */
+    .bloque__dentro:has(> .galeria--grande) { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); }
+    .galeria--grande .galeria__item {
+      flex: 1 1 0;
+      max-width: min(340px, calc((100svh - 260px) * 9 / 16));
+    }
+  }
+  @media (max-width: 1024px) {
+    .bloque__dentro.con-galeria { grid-template-columns: 1fr; }
+    .bloque--der .con-galeria .galeria { order: 0; }
+    .bloque--der .bloque__contenido { justify-items: start; text-align: left; }
+    /* En tablet la galería grande se desplaza de lado: cada foto queda grande en vez de cuatro chicas */
+    .galeria--grande { justify-content: flex-start; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; }
+    .galeria--grande .galeria__item { flex: 0 0 42%; max-width: 280px; scroll-snap-align: start; }
+    .galeria--grande .galeria__item:nth-child(even) { margin-top: 0; }
+  }
+  @media (max-width: 767px) {
+    .bloque__dentro { padding-block: 96px 64px; }
+    .galeria { justify-content: flex-start; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; }
+    .galeria__item { flex: 0 0 62%; max-width: none; scroll-snap-align: center; }
+    .galeria__item:nth-child(even) { margin-top: 0; }
+    .bloque__velo, .bloque--der .bloque__velo { transform: none; background: linear-gradient(180deg, rgba(0, 0, 0, .3), rgba(0, 0, 0, .85)); }
+    .bloque--der .bloque__contenido { justify-items: start; text-align: left; }
+    .bloque__texto { font-size: 16px; }
+  }
+
+  /* Sin movimiento: imagen abierta, sin tramo fijo */
+  @media (prefers-reduced-motion: reduce) {
+    .bloque::after { display: none; }
+    .bloque__escena { position: relative; }
+    .bloque__persianas { display: none; }
+  }
+</style>
+
+<script>
+  // Con las transiciones de página este script corre una sola vez:
+  // los bloques y videos se vuelven a buscar en cada página (astro:page-load).
+  import { activarRuedaSuave, alcance } from '../scripts/rueda-suave';
+
+  const clamp = (n: number) => Math.max(0, Math.min(1, n));
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  const conMovimiento = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const SUAVIDAD = 0.3;       // cuánto alcanzan las animaciones al scroll por cuadro: menos es más suave
+  const SUBE_FONDO = 19;      // % de su altura que sube el fondo en el tramo fijo
+  const CONTENIDO_EN = 0.72;  // punto de la entrada en que aparece el contenido
+
+  type Bloque = {
+    el: HTMLElement;
+    escena: HTMLElement;
+    fondo: HTMLElement;
+    tiras: HTMLElement[];
+    top: number;
+    alto: number;
+    abierto: number;
+    avance: number;
+  };
+  let bloques: Bloque[] = [];
+  let pos = window.scrollY;   // scroll suavizado que siguen las animaciones
+  let cuadroPedido = 0;
+  let altoVentana = window.innerHeight;
+
+  function pintar() {
+    const h = altoVentana;
+    for (const b of bloques) {
+      const top = b.top - pos;
+      // entrada: 0 cuando el bloque asoma por abajo, 1 cuando llega arriba
+      const entrada = clamp((h - top) / h);
+      const abierto = Math.round(smooth(clamp((entrada - 0.25) / 0.75)) * 1000) / 1000;
+      const avance = Math.round(clamp(-top / Math.max(h, b.alto - h)) * 1000) / 1000;
+      if (abierto !== b.abierto) {
+        const escala = (1 - abierto).toFixed(3);
+        for (const tira of b.tiras) tira.style.transform = `scaleY(${escala})`;
+      }
+      if (abierto !== b.abierto || avance !== b.avance) {
+        b.fondo.style.transform = `translate3d(0, ${(-avance * SUBE_FONDO).toFixed(2)}%, 0) scale(${(1.12 - abierto * 0.12).toFixed(3)})`;
+      }
+      b.abierto = abierto;
+      b.avance = avance;
+      b.el.classList.toggle('is-visible', entrada >= CONTENIDO_EN);
+    }
+  }
+
+  let ultimoCuadro = 0;
+  function cuadro(ahora: number) {
+    cuadroPedido = 0;
+    const ms = Math.min(50, ahora - ultimoCuadro || 16.7);
+    ultimoCuadro = ahora;
+    const y = window.scrollY;
+    const falta = y - pos;
+    pos = Math.abs(falta) < 0.5 ? y : pos + falta * alcance(SUAVIDAD, ms);
+    pintar();
+    if (pos !== y) pedir();
+  }
+  const pedir = () => {
+    if (!cuadroPedido && bloques.length) cuadroPedido = requestAnimationFrame(cuadro);
+  };
+
+  // Guarda las medidas para no leerlas en cada cuadro. Solo se fija el bloque que cabe en
+  // la pantalla; si no, el título quedaría cortado.
+  function medir() {
+    altoVentana = window.innerHeight;
+    let cambio = false;
+    for (const b of bloques) {
+      const alto = b.escena.offsetHeight > altoVentana + 1;
+      if (alto !== b.el.classList.contains('bloque--alto')) cambio = true;
+      b.el.classList.toggle('bloque--alto', alto);
+    }
+    for (const b of bloques) {
+      b.top = b.el.getBoundingClientRect().top + window.scrollY;
+      b.alto = b.el.offsetHeight;
+    }
+    return cambio;
+  }
+
+  if (conMovimiento) {
+    window.addEventListener('scroll', pedir, { passive: true });
+    activarRuedaSuave(() => bloques.length > 0);
+    // El alto de la página cambia al redimensionar o al cargar la fuente
+    new ResizeObserver(() => {
+      if (bloques.length) { medir(); pos = window.scrollY; pintar(); }
+    }).observe(document.body);
+  }
+
+  // Los videos de la galería solo se reproducen en pantalla. Arrancan cuando ya subieron
+  // un poco, y de uno en uno: varios a la vez traban el cambio de sección.
+  const PAUSA_VIDEOS = 220;
+  const videos = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((e, i) => {
+        const v = e.target as HTMLVideoElement;
+        v.dataset.enPantalla = e.isIntersecting ? '1' : '';
+        if (!e.isIntersecting) v.pause();
+        else window.setTimeout(() => { if (v.dataset.enPantalla) v.play().catch(() => {}); }, i * PAUSA_VIDEOS);
+      });
+    },
+    { threshold: 0.25, rootMargin: '0px 0px -30% 0px' }
+  );
+
+  function iniciar() {
+    const elementos = [...document.querySelectorAll<HTMLElement>('.bloque')];
+    if (conMovimiento) {
+      bloques = elementos.map((el) => ({
+        el,
+        escena: el.querySelector<HTMLElement>('.bloque__escena')!,
+        fondo: el.querySelector<HTMLElement>('.bloque__fondo')!,
+        tiras: [...el.querySelectorAll<HTMLElement>('.bloque__persianas i')],
+        top: 0,
+        alto: 0,
+        abierto: -1,
+        avance: -1,
+      }));
+      // Quitar la pausa cambia la altura de la página: se vuelve al servicio del enlace
+      const destino = location.hash ? document.getElementById(location.hash.slice(1)) : null;
+      if (medir()) {
+        destino?.scrollIntoView({ behavior: 'instant' });
+        medir();
+      }
+      pos = window.scrollY;
+      pintar();
+    } else {
+      elementos.forEach((b) => b.classList.add('is-visible'));
+    }
+    videos.disconnect();
+    document.querySelectorAll<HTMLVideoElement>('.galeria video').forEach((v) => videos.observe(v));
+  }
+  // Si este script llega con una página nueva, puede cargarse después del aviso
+  // de "página lista": por eso también se inicia en cuanto se ejecuta.
+  iniciar();
+  document.addEventListener('astro:page-load', iniciar);
+</script>

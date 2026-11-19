@@ -1,0 +1,222 @@
+---
+// Apertura de Contacto (ContactScene de plantilla-react, con los colores de Albiño).
+// Cuatro fotos llegan apiladas al centro y, al hacer scroll, se abren hacia las esquinas
+// girando en 3D; en el hueco que dejan aparece el título letra por letra.
+// Sin JavaScript o con movimiento reducido se ve ya abierta, en una pantalla.
+import Icon from './Icon.astro';
+
+// Fotos de las esquinas: arriba izq., arriba der., abajo izq., abajo der.
+const fotos = [
+  '/media/produccion-cantante.webp',
+  '/media/bodas-novia.webp',
+  '/media/fotografia-graduada.webp',
+  '/media/redes-estudio.jpg',
+];
+const titulo = 'Hablemos';
+---
+<section class="apertura" data-apertura>
+  <div class="apertura__escena">
+    <div class="apertura__fotos" aria-hidden="true">
+      {fotos.map((src, i) => (
+        <div class="apertura__foto" style={`--x:${i % 2 ? 1 : -1};--y:${i < 2 ? -1 : 1};--i:${i}`}>
+          <img src={src} alt="" width="500" height="667" decoding="async" />
+        </div>
+      ))}
+    </div>
+
+    <div class="apertura__texto">
+      <h1 class="apertura__titulo" aria-label={titulo}>
+        {[...titulo].map((letra, i) => <span aria-hidden="true" style={`--l:${i}`}>{letra}</span>)}
+      </h1>
+      <div class="apertura__botones">
+        <a class="boton magnetico" href="#formulario">Escribir mensaje <Icon name="abajo" size={18} class="flecha" /></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .apertura { position: relative; }
+  .apertura__escena {
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+    min-height: 560px;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  /* Con JavaScript la sección se alarga y la escena queda fija mientras se abre */
+  .apertura.is-viva { height: 240vh; }
+  .apertura.is-viva .apertura__escena { position: sticky; top: 0; }
+
+  /* ---------- Fotos ---------- */
+  .apertura__fotos { position: absolute; inset: 0; perspective: 1200px; }
+  .apertura__foto {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: clamp(130px, 17vw, 260px);
+    aspect-ratio: 3 / 4;
+    /* posición abierta: la que se ve sin JavaScript */
+    transform: translate(-50%, -50%) translate3d(calc(var(--x) * 40vw), calc(var(--y) * 28vh), -80px)
+      rotateY(calc(var(--x) * 25deg)) rotateZ(calc(var(--x) * var(--y) * 15deg));
+    will-change: transform;
+  }
+  .apertura__foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, .6);
+    animation: llegar 1.3s calc(.15s + var(--i) * .12s) var(--ease) both;
+  }
+  .apertura__foto:nth-child(2) img { filter: grayscale(1); }
+  .apertura__foto:nth-child(3) img { filter: grayscale(1); }
+
+  /* ---------- Texto ---------- */
+  /* El título queda justo en el centro de la pantalla y el botón debajo */
+  .apertura__texto {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-rows: 1fr auto 1fr;
+    justify-items: center;
+    padding: 0 24px;
+    text-align: center;
+  }
+  .apertura__titulo { grid-row: 2; }
+  .apertura__botones { grid-row: 3; align-self: start; margin-top: clamp(24px, 4vh, 40px); }
+  .apertura__titulo {
+    display: flex;
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-weight: 700;
+    font-size: clamp(54px, 12vw, 190px);
+    line-height: .9;
+    text-transform: uppercase;
+  }
+  /* Letras: suben desde abajo una tras otra cuando el hueco ya se abrió */
+  .apertura__titulo span {
+    display: inline-block;
+    transform: translateY(110%) rotate(8deg);
+    opacity: 0;
+    transition: transform .9s calc(var(--l) * .05s) var(--ease), opacity .6s calc(var(--l) * .05s);
+  }
+  .apertura__titulo span:last-child { color: var(--acento); }
+  .apertura__botones {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .8s .35s var(--ease), transform .8s .35s var(--ease);
+  }
+
+  .apertura.is-abierta .apertura__titulo span,
+  .apertura.is-abierta .apertura__botones { opacity: 1; transform: none; }
+
+  @keyframes llegar { from { opacity: 0; transform: translateY(60px) scale(.9); } to { opacity: 1; transform: none; } }
+
+  @media (max-width: 767px) {
+    .apertura__foto { width: 30vw; }
+  }
+</style>
+
+<script>
+  // Con las transiciones de página este script corre una sola vez:
+  // la sección se vuelve a buscar en cada página (astro:page-load).
+  import { activarRuedaSuave, alcance } from '../scripts/rueda-suave';
+
+  const clamp = (n: number) => Math.max(0, Math.min(1, n));
+  const smooth = (t: number) => t * t * (3 - 2 * t);
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+  const fase = (p: number, a: number, b: number) => clamp((p - a) / (b - a));
+  const conMovimiento = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const SUAVIDAD = 0.3; // cuánto alcanza la animación al scroll por cuadro
+  const ABRE_HASTA = 0.6; // tramo del scroll en que las fotos terminan de abrirse
+  const TEXTO_EN = 0.32; // punto en que entra el título
+
+  let seccion: HTMLElement | null = null;
+  let fotos: HTMLElement[] = [];
+  let top = 0;
+  let largo = 1;
+  let pos = window.scrollY;
+  let ultimo = -1;
+  let pedido = 0;
+  let ultimoCuadro = 0;
+
+  function pintar() {
+    if (!seccion) return;
+    const p = Math.round(clamp((pos - top) / largo) * 1000) / 1000;
+    if (p === ultimo) return;
+    ultimo = p;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const chico = vw < 768;
+    const abre = smooth(fase(p, 0, ABRE_HASTA));
+    fotos.forEach((foto, i) => {
+      const x = i % 2 ? 1 : -1;
+      const y = i < 2 ? -1 : 1;
+      const tx = x * lerp(vw * 0.09, vw * (chico ? 0.4 : 0.4), abre);
+      const ty = y * lerp(vh * 0.11, vh * (chico ? 0.33 : 0.28), abre);
+      foto.style.transform =
+        `translate(-50%, -50%) translate3d(${tx.toFixed(1)}px, ${ty.toFixed(1)}px, ${lerp(220, -80, abre).toFixed(1)}px) ` +
+        `rotateY(${(x * abre * 25).toFixed(2)}deg) rotateZ(${(x * y * (abre * 15 + (1 - abre) * 4)).toFixed(2)}deg)`;
+    });
+    seccion.classList.toggle('is-abierta', p >= TEXTO_EN);
+  }
+
+  function cuadro(ahora: number) {
+    pedido = 0;
+    const ms = Math.min(50, ahora - ultimoCuadro || 16.7);
+    ultimoCuadro = ahora;
+    const y = window.scrollY;
+    const falta = y - pos;
+    pos = Math.abs(falta) < 0.5 ? y : pos + falta * alcance(SUAVIDAD, ms);
+    pintar();
+    if (pos !== y) pedir();
+  }
+  const pedir = () => { if (!pedido && seccion) pedido = requestAnimationFrame(cuadro); };
+
+  function medir() {
+    if (!seccion) return;
+    top = seccion.getBoundingClientRect().top + window.scrollY;
+    largo = Math.max(1, seccion.offsetHeight - window.innerHeight);
+    ultimo = -1;
+  }
+
+  if (conMovimiento) {
+    window.addEventListener('scroll', pedir, { passive: true });
+    window.addEventListener('resize', () => { medir(); pintar(); });
+    activarRuedaSuave(() => seccion !== null);
+  }
+
+  // Botones magnéticos (Cta de plantilla-react): se inclinan hacia el puntero
+  function magnetizar(raiz: ParentNode) {
+    if (!conMovimiento || !matchMedia('(pointer: fine)').matches) return;
+    raiz.querySelectorAll<HTMLElement>('.magnetico:not([data-iman])').forEach((el) => {
+      el.dataset.iman = '';
+      el.addEventListener('pointermove', (e) => {
+        const caja = el.getBoundingClientRect();
+        el.style.translate = `${((e.clientX - caja.left - caja.width / 2) * 0.12).toFixed(1)}px ${((e.clientY - caja.top - caja.height / 2) * 0.22).toFixed(1)}px`;
+      });
+      el.addEventListener('pointerleave', () => { el.style.translate = ''; });
+    });
+  }
+
+  function iniciar() {
+    seccion = document.querySelector<HTMLElement>('[data-apertura]');
+    if (!seccion) return;
+    magnetizar(seccion);
+    if (!conMovimiento) { seccion.classList.add('is-abierta'); return; }
+    fotos = [...seccion.querySelectorAll<HTMLElement>('.apertura__foto')];
+    seccion.classList.add('is-viva');
+    medir();
+    pos = window.scrollY;
+    pintar();
+  }
+  document.addEventListener('astro:before-swap', () => { seccion = null; });
+  // Si este script llega con una página nueva, puede cargarse después del aviso
+  // de "página lista": por eso también se inicia en cuanto se ejecuta.
+  iniciar();
+  document.addEventListener('astro:page-load', iniciar);
+</script>

@@ -1,0 +1,354 @@
+---
+// Sección final del inicio (FoundationPlay de plantilla-react, con los colores de Albiño).
+// Sube como una página sobre fondo claro: mosaico de fotos que se abren al pasar el mouse,
+// titular y una fila de fotos inclinadas que se desliza. Al final llega el pie y todo el fondo
+// cambia a negro en 0.8 s.
+// Sin JavaScript o con movimiento reducido se muestra como una página normal.
+import Marcador from './Marcador.astro';
+import PieCuero from './PieCuero.astro';
+import { fundacion } from '../data/fundacion';
+
+// Anchos y giros de la fila, medidos en la plantilla; se repiten
+const ANCHOS = [18.75, 23.6, 20, 24.4];
+const GIROS = [3.3, -3.9, 1.9, -3.8];
+---
+<section class="fundacion" data-fundacion>
+  <div class="fundacion__escena">
+    <div class="fundacion__fondo" aria-hidden="true"></div>
+    <div class="fundacion__contenido">
+      <div class="fundacion__pantalla">
+        <h2 class="fundacion__titulo">{fundacion.titulo}</h2>
+        <div class="fundacion__mosaico">
+          {fundacion.mosaico.map((foto, i) => (
+            <figure class:list={{ 'is-abierta': i === 0 }} tabindex="0" style={`--i: ${i}`}>
+              {foto.src ? <img src={foto.src} alt={foto.alt} loading="lazy" /> : <Marcador etiqueta={foto.alt} />}
+            </figure>
+          ))}
+        </div>
+        <div class="fundacion__leyenda">
+          <p>{fundacion.leyenda.texto}</p>
+          <a class="fundacion__cta" href={fundacion.cta.href}>{fundacion.cta.texto}</a>
+        </div>
+      </div>
+
+      <h2 class="fundacion__titular">
+        {fundacion.titular.map((linea) => <span>{linea}</span>)}
+      </h2>
+
+      <div class="fundacion__ventana">
+        <div class="fundacion__fila">
+          {fundacion.fila.map((foto, i) => (
+            <figure style={`width: ${ANCHOS[i % 4]}vw; --giro: ${GIROS[i % 4]}deg; --i: ${i}`}>
+              {foto.src ? <img src={foto.src} alt="" loading="lazy" /> : <Marcador etiqueta={foto.pie} />}
+              <figcaption>{foto.pie}</figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+
+      <div class="fundacion__pie"><PieCuero embebido /></div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* ---------- Página normal (sin JavaScript o con movimiento reducido) ---------- */
+  .fundacion { --claro: #f1ebe2; position: relative; background: var(--claro); color: var(--negro); }
+  .fundacion__fondo { display: none; }
+  .fundacion__pantalla { position: relative; height: 100vh; height: 100svh; min-height: 620px; }
+  .fundacion__pie { position: relative; height: 100vh; height: 100svh; min-height: 640px; background: var(--negro); color: var(--texto); }
+
+  /* ---------- Escena fija con el scroll ---------- */
+  .fundacion.is-activa { height: calc(100svh + 380svh); background: none; }
+  .is-activa .fundacion__escena { position: sticky; top: 0; height: 100svh; overflow: hidden; }
+  .is-activa .fundacion__fondo {
+    display: block;
+    position: absolute;
+    inset: 0;
+    background: var(--claro);
+    transition: background-color .8s cubic-bezier(.65, .05, .36, 1);
+  }
+  .fundacion.is-oscuro .fundacion__fondo { background-color: var(--negro); }
+  .is-activa .fundacion__contenido { position: relative; will-change: transform; }
+  .is-activa .fundacion__pie { background: none; color: var(--texto); }
+
+  .fundacion__titulo, .fundacion__titular { transition: color .8s cubic-bezier(.65, .05, .36, 1); }
+  .fundacion.is-oscuro .fundacion__titulo, .fundacion.is-oscuro .fundacion__titular, .fundacion.is-oscuro .fundacion__leyenda { color: var(--texto); }
+
+  .fundacion__titulo {
+    position: absolute;
+    left: 3.33vw;
+    right: 3.33vw;
+    top: 8%;
+    margin: 0;
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: 8vw;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+
+  /* Mosaico: la foto abierta crece 4.2 veces y va a color; las demás en blanco y negro.
+     La foto no cambia de tamaño: mide siempre lo que mide la columna abierta y queda centrada;
+     la columna solo recorta, así que al abrirse muestra más foto sin acercarla.
+     Ancho abierto = (ancho del mosaico − 4 huecos) × 4.2 / (4.2 + 4 cerradas). */
+  .fundacion__mosaico {
+    --ancho-abierta: calc((93.34vw - 32px) * 4.2 / 8.2);
+    position: absolute;
+    left: 3.33vw;
+    right: 3.33vw;
+    top: 26%;
+    height: 57.5%; /* 20% más alto que el original (47.9%) */
+    display: flex;
+    gap: 8px;
+  }
+  .fundacion__mosaico figure {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: flex-grow .7s cubic-bezier(.22, 1, .36, 1);
+  }
+  .fundacion__mosaico figure.is-abierta { flex-grow: 4.2; }
+  .fundacion__mosaico img {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: var(--ancho-abierta);
+    max-width: none;
+    height: 100%;
+    margin-left: calc(var(--ancho-abierta) / -2);
+    object-fit: cover;
+    filter: grayscale(1) brightness(.95);
+    transition: filter .7s cubic-bezier(.22, 1, .36, 1);
+  }
+  .fundacion__mosaico .is-abierta img { filter: none; }
+  .fundacion__mosaico figure:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+  .fundacion__leyenda {
+    position: absolute;
+    left: 3.33vw;
+    right: 3.33vw;
+    top: 86.5%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    transition: color .8s;
+  }
+  .fundacion__leyenda strong {
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: 22px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .fundacion__leyenda p { max-width: 448px; font-size: 16px; line-height: 1.6; }
+  .fundacion__cta {
+    display: grid;
+    place-items: center;
+    padding: 0 28px;
+    height: 47px;
+    border-radius: 999px;
+    background: var(--acento);
+    color: var(--texto);
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    transition: background .3s, color .3s;
+  }
+  .fundacion__cta:hover { background: var(--negro); }
+
+  /* Titular centrado; la fila de fotos va justo debajo */
+  .fundacion__titular {
+    display: grid;
+    justify-items: center;
+    margin: 12vh 0 0;
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: 8vw;
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .fundacion__ventana { overflow: hidden; padding: 4vh 0 3vh; }
+  .fundacion__fila { display: flex; align-items: center; gap: 2.6vw; width: max-content; padding-left: 3.33vw; will-change: transform; }
+  .fundacion__fila figure {
+    flex: none;
+    margin: 0;
+    padding: 8px 8px 0;
+    background: #e9e2d6;
+    color: #101010;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, .25);
+    transform: rotate(var(--giro));
+  }
+  .fundacion__fila img { width: 100%; aspect-ratio: 270 / 354; object-fit: cover; }
+  .fundacion__fila figcaption {
+    padding: 8px 2px 10px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  /* Entrada: el mosaico cae celda a celda y la fila entra desde la derecha */
+  .is-activa .fundacion__mosaico figure, .is-activa .fundacion__fila figure { opacity: 0; }
+  .is-activa.is-mostrada .fundacion__mosaico figure { animation: fundacion-cae .7s cubic-bezier(.16, 1, .3, 1) calc(var(--i) * 70ms) both; opacity: 1; }
+  .is-activa.is-mostrada .fundacion__fila figure { animation: fundacion-entra .7s cubic-bezier(.16, 1, .3, 1) calc(var(--i) * 60ms) both; opacity: 1; }
+  @keyframes fundacion-cae { from { opacity: 0; transform: translateY(26px); } }
+  @keyframes fundacion-entra { from { opacity: 0; transform: translateX(28px) rotate(var(--giro)); } }
+
+  @media (max-width: 799px) {
+    .fundacion__titulo { font-size: 11vw; white-space: normal; }
+    .fundacion__mosaico { height: 48%; top: 27%; gap: 5px; --ancho-abierta: calc((93.34vw - 20px) * 3 / 7); }
+    .fundacion__mosaico figure.is-abierta { flex-grow: 3; }
+    .fundacion__leyenda { grid-template-columns: 1fr; gap: 8px; top: 78%; justify-items: start; }
+    .fundacion__titular { font-size: 11vw; }
+    .fundacion__fila figure { width: 46vw !important; }
+  }
+</style>
+
+<script>
+  import { activarRuedaSuave, alcance } from '../scripts/rueda-suave';
+  import { salidaNav } from '../scripts/salida-nav';
+  import { mostrarWhatsapp, volverABoton } from '../scripts/boton-whatsapp';
+
+  const clamp = (n: number) => Math.max(0, Math.min(1, n));
+  const phase = (p: number, a: number, b: number) => clamp((p - a) / (b - a));
+  const conMovimiento = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const SUAVIDAD = 0.3;     // cuánto alcanzan las animaciones al scroll por cuadro
+  const OSCURO_EN = 0.667;  // el fondo pasa a negro cuando el pie cruza este punto de la pantalla
+
+  type Escena = {
+    el: HTMLElement;
+    contenido: HTMLElement;
+    fila: HTMLElement;
+    caminos: SVGPathElement[];
+    top: number;
+    rango: number;
+    sobra: number;     // cuánto más alto que la pantalla es el contenido
+    pieArriba: number; // posición del pie dentro del contenido
+    oscuro: boolean;
+    firmado: boolean;
+    mostrada: boolean;
+  };
+  let escena: Escena | null = null;
+  let pos = window.scrollY;
+  let vw = window.innerWidth;
+  let vh = window.innerHeight;
+  let pedido = 0;
+  let ultimo = 0;
+
+  function pintar() {
+    const e = escena;
+    if (!e) return;
+    const p = clamp((pos - e.top) / e.rango);
+    const visible = pos > e.top - vh && pos < e.top + e.rango + vh;
+    if (visible && !e.mostrada && pos > e.top - vh * 0.4) { e.mostrada = true; e.el.classList.add('is-mostrada'); }
+
+    const sube = phase(p, 0.04, 1) * e.sobra;
+    e.contenido.style.transform = `translate3d(0, ${(-sube).toFixed(1)}px, 0)`;
+    e.fila.style.transform = `translate3d(${((0.2 - p * 0.9) * vw * 0.4).toFixed(1)}px, 0, 0)`;
+
+    const oscuro = visible && e.pieArriba - sube < vh * OSCURO_EN;
+    salidaNav(visible ? e.pieArriba - sube : null);
+    if (oscuro !== e.oscuro) {
+      e.oscuro = oscuro;
+      e.el.classList.toggle('is-oscuro', oscuro);
+      if (oscuro && !e.firmado) {
+        e.firmado = true;
+        mostrarWhatsapp(e.el);
+        e.caminos.forEach((c) => { c.style.strokeDashoffset = '0'; });
+      } else if (!oscuro && e.firmado) {
+        // Se borra al instante, sin la animación de vuelta, para dibujarse de nuevo al regresar
+        e.firmado = false;
+        volverABoton(e.el);
+        e.caminos.forEach((c) => {
+          c.style.transition = 'none';
+          c.style.strokeDashoffset = c.dataset.largo ?? '0';
+          c.getBoundingClientRect();
+          c.style.transition = '';
+        });
+      }
+    }
+    // El menú cambia a letras negras mientras está sobre el fondo claro
+    document.body.toggleAttribute('data-fondo-claro', pos >= e.top - 2 && pos <= e.top + e.rango && !oscuro);
+  }
+
+  function cuadro(ahora: number) {
+    pedido = 0;
+    const ms = Math.min(50, ahora - ultimo || 16.7);
+    ultimo = ahora;
+    const y = window.scrollY;
+    const falta = y - pos;
+    pos = Math.abs(falta) < 0.5 ? y : pos + falta * alcance(SUAVIDAD, ms);
+    pintar();
+    if (pos !== y) pedir();
+  }
+  const pedir = () => {
+    if (!pedido && escena) pedido = requestAnimationFrame(cuadro);
+  };
+
+  // Guarda las medidas para no leerlas en cada cuadro
+  function medir() {
+    const e = escena;
+    if (!e) return;
+    vw = window.innerWidth;
+    vh = window.innerHeight;
+    e.top = e.el.getBoundingClientRect().top + window.scrollY;
+    e.rango = Math.max(1, e.el.offsetHeight - vh);
+    e.sobra = Math.max(0, e.contenido.scrollHeight - vh);
+    e.pieArriba = e.el.querySelector<HTMLElement>('.fundacion__pie')!.offsetTop;
+  }
+
+  function iniciar() {
+    const el = document.querySelector<HTMLElement>('[data-fundacion]');
+    escena = null;
+    document.body.removeAttribute('data-fondo-claro');
+    salidaNav(null);
+    if (!el || !conMovimiento) return;
+    el.classList.add('is-activa');
+    const caminos = [...el.querySelectorAll<SVGPathElement>('.cuero__firma path')];
+    caminos.forEach((c) => {
+      const largo = Math.ceil(c.getTotalLength());
+      c.dataset.largo = String(largo);
+      c.style.strokeDasharray = String(largo);
+      c.style.strokeDashoffset = String(largo);
+    });
+    // Mosaico: la foto se abre al pasar el mouse o al llegar con el teclado, y se queda abierta
+    const fotos = [...el.querySelectorAll<HTMLElement>('.fundacion__mosaico figure')];
+    const abrir = (f: HTMLElement) => fotos.forEach((x) => x.classList.toggle('is-abierta', x === f));
+    fotos.forEach((f) => {
+      f.addEventListener('pointerenter', () => abrir(f));
+      f.addEventListener('focus', () => abrir(f));
+    });
+    escena = {
+      el,
+      contenido: el.querySelector<HTMLElement>('.fundacion__contenido')!,
+      fila: el.querySelector<HTMLElement>('.fundacion__fila')!,
+      caminos,
+      top: 0, rango: 1, sobra: 0, pieArriba: 0,
+      oscuro: false, firmado: false, mostrada: false,
+    };
+    medir();
+    pos = window.scrollY;
+    pintar();
+  }
+
+  if (conMovimiento) {
+    window.addEventListener('scroll', pedir, { passive: true });
+    new ResizeObserver(() => { if (escena) { medir(); pintar(); } }).observe(document.body);
+    activarRuedaSuave(() => escena !== null);
+  }
+  iniciar();
+  document.addEventListener('astro:page-load', iniciar);
+</script>

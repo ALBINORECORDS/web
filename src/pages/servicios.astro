@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import ServiceBlock from '../components/ServiceBlock.astro';
+import { servicios } from '../data/servicios';
+---
+<Base titulo="Servicios" descripcion="Producción musical, bodas, podcast, manejo de redes y fotografía personal.">
+  <PageHero imagen="/media/cabecera-servicios.webp" clase="cabecera--servicios">
+    Creamos<br />contenido <span class="acento">que se siente</span>
+  </PageHero>
+
+  {servicios.map((s, i) => <ServiceBlock servicio={s} numero={i + 1} />)}
+</Base>
+
+<style>
+  /* Título de la cabecera un poco más abajo y a la izquierda (solo en esta página) */
+  :global(.cabecera.cabecera--servicios) { padding-bottom: 0; }
+  /* Imagen alineada arriba: se ven las computadoras completas y se recorta la parte de abajo */
+  :global(.cabecera.cabecera--servicios .cabecera__fondo) { background-position: center top; }
+  :global(.cabecera--servicios .cabecera__contenido) { padding-left: 36px; }
+  @media (max-width: 767px) {
+    :global(.cabecera--servicios .cabecera__contenido) { padding-left: 0; }
+  }
+</style>

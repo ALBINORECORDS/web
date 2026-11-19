@@ -1,0 +1,65 @@
+---
+import Base from '../layouts/Base.astro';
+import IntroLogo from '../components/IntroLogo.astro';
+import FilmServicios from '../components/FilmServicios.astro';
+import Fundacion from '../components/Fundacion.astro';
+import { site } from '../data/site';
+---
+<Base pie={false}>
+  <!-- ===================== HERO CON LOGO ANIMADO ===================== -->
+  <section class="hero">
+    <IntroLogo />
+
+    <!-- El nombre y el lema aparecen cuando el logo se cierra y las franjas rebotan -->
+    <div class="hero__contenido">
+      <h1 class="titulo-xl hero__titulo">{site.nombre}</h1>
+      <p class="hero__lema">{site.lema}</p>
+    </div>
+  </section>
+  <!-- ===================== SERVICIOS ===================== -->
+  <FilmServicios />
+
+  <!-- ===================== CIERRE CON EL PIE ===================== -->
+  <Fundacion />
+</Base>
+
+<style>
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+    min-height: 560px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .hero__contenido {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 110px;
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .hero__titulo { animation: aparecer 0.9s 2.0s var(--ease) both; }
+  .hero__lema {
+    font-family: var(--font-mono);
+    font-size: clamp(14px, 1.4vw, 20px);
+    font-weight: 700;
+    letter-spacing: .45em;
+    text-transform: uppercase;
+    color: var(--texto);
+    animation: aparecer 0.9s 2.15s var(--ease) both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__titulo, .hero__lema { animation-delay: 0s; }
+  }
+
+  @keyframes aparecer { from { opacity: 0; transform: translateY(30px) scale(.96); } to { opacity: 1; transform: none; } }
+
+</style>

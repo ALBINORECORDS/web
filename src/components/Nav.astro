@@ -1,0 +1,278 @@
+---
+import { menu, site } from '../data/site';
+const actual = Astro.url.pathname;
+const esActivo = (href: string) => (href === '/' ? actual === '/' : actual.startsWith(href));
+---
+<!-- Logo de la barra móvil (en escritorio no se muestra) -->
+<a class="marca" href="/" aria-label={`${site.nombre} – inicio`} transition:persist="marca">
+  <img src="/media/logo-blanco.webp" alt="" width="600" height="880" />
+</a>
+
+<!--
+  Menú de escritorio: cada letra recorre un camino en forma de L.
+  Arriba de la página está vertical a la izquierda; al bajar, las letras
+  suben por el borde izquierdo, doblan en la esquina y siguen hacia la
+  derecha hasta quedar horizontales y centradas arriba (ver <script>).
+  En móvil se convierte en botón hamburguesa.
+  transition:persist: el menú no se recarga al cambiar de página, solo se mueve.
+-->
+<header class="nav" data-nav transition:persist="nav">
+  <button class="nav__toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu-principal">
+    <span></span><span></span><span></span>
+  </button>
+  <nav id="menu-principal" class="nav__menu" aria-label="Principal">
+    {menu.map((item) => (
+      <a
+        href={item.href}
+        aria-label={item.texto}
+        class:list={{ 'is-active': esActivo(item.href) }}
+        aria-current={esActivo(item.href) ? 'page' : undefined}
+      >
+        {[...item.texto].map((letra) => <span class="l" aria-hidden="true">{letra}</span>)}
+      </a>
+    ))}
+  </nav>
+</header>
+
+<style>
+  .marca { display: none; }
+
+  .nav {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;      /* solo las letras reciben clics */
+  }
+  /* Al llegar al pie el menú se desvanece con el scroll (--nav-salida va de 0 a 1, lo calcula
+     src/scripts/salida-nav.ts). Sin transform: rompería el menú móvil, que es fijo. */
+  .nav, .marca { opacity: calc(1 - var(--nav-salida, 0)); transition: opacity .12s linear; }
+  :global(html[data-nav-oculto]) .nav__menu a,
+  :global(html[data-nav-oculto]) .nav__toggle,
+  :global(html[data-nav-oculto]) .marca { pointer-events: none; }
+  .nav__toggle { display: none; }
+
+  /* Sin JavaScript: menú horizontal arriba al centro */
+  .nav__menu {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    translate: -50% 0;
+    display: flex;
+    gap: 52px;
+    white-space: nowrap;
+  }
+  .nav__menu a {
+    font-family: var(--font-display); font-stretch: var(--ancho-display);
+    font-size: var(--tam-menu, 20px);   /* el script lo baja si el menú no cabe en vertical */
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--texto);
+    text-shadow: 0 1px 10px rgba(0, 0, 0, .7);
+    pointer-events: auto;
+    transition: color .3s var(--ease);
+  }
+  .nav__menu a:hover,
+  .nav__menu a.is-active { color: var(--acento); }
+  /* Sobre el fondo claro del final del inicio (Fundacion) las letras pasan a negro */
+  :global(body[data-fondo-claro]) .nav__menu a { text-shadow: none; }
+  :global(body[data-fondo-claro]) .nav__menu a:not(.is-active):not(:hover) { color: var(--negro); }
+  :global(body[data-fondo-claro]) .marca img { filter: invert(1); }
+  .l { display: inline-block; }
+
+  /* En escritorio el menú queda oculto hasta que el script coloca las letras
+     (evita que aparezca un instante arriba antes de irse a la izquierda) */
+  @media (min-width: 768px) {
+    .nav:not(.is-track) .nav__menu { visibility: hidden; }
+  }
+
+  /* Al cambiar de página las letras se deslizan a su nueva posición */
+  .nav.nav--suave .l { transition: transform .9s var(--ease); }
+
+  /* Con JavaScript: cada letra se posiciona sobre el camino */
+  .nav.is-track .nav__menu { position: static; translate: none; display: block; }
+  .nav.is-track .l {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding-block: 6px;        /* área de clic más cómoda */
+    transform-origin: center;
+    will-change: transform;
+  }
+
+  /* ---------- Móvil: barra superior con hamburguesa ---------- */
+  @media (max-width: 767px) {
+    .marca { display: block; position: fixed; top: 12px; left: 16px; z-index: 61; width: 34px; }
+    .nav__toggle {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      z-index: 2;
+      display: grid;
+      place-content: center;
+      gap: 5px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--borde);
+      background: rgba(0, 0, 0, .6);
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    .nav__toggle span { width: 20px; height: 2px; background: var(--texto); transition: transform .3s, opacity .3s; }
+    .nav.is-open .nav__toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .nav.is-open .nav__toggle span:nth-child(2) { opacity: 0; }
+    .nav.is-open .nav__toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+    .nav__menu {
+      position: fixed;
+      inset: 0;
+      translate: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 28px;
+      background: rgba(0, 0, 0, .96);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .3s, visibility .3s;
+    }
+    .nav.is-open .nav__menu { opacity: 1; visibility: visible; pointer-events: auto; }
+    .nav__menu a { font-size: 22px; }
+  }
+</style>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('[data-nav]')!;
+  const escritorio = matchMedia('(min-width: 768px)');
+
+  // Forma del camino (px): columna izquierda → curva → fila superior
+  const X0 = 40;   // distancia del borde izquierdo a la columna de letras
+  const Y0 = 40;   // distancia del borde superior a la fila de letras
+  const R = 28;    // radio de la curva en la esquina
+  const GAP = 44;  // separación entre palabras
+
+  type Letra = { el: HTMLElement; u: number; w: number; h: number };
+  let letras: Letra[] = [];
+  let largo = 0;
+
+  // Mide cada letra en horizontal para saber cuánto ocupa en el camino
+  function medir(segunda = false) {
+    if (!segunda) nav.style.removeProperty('--tam-menu');
+    nav.classList.remove('is-track');
+    letras.forEach((l) => (l.el.style.transform = ''));
+    letras = [];
+    let u = 0;
+    nav.querySelectorAll<HTMLAnchorElement>('.nav__menu a').forEach((a, i) => {
+      if (i) u += GAP;
+      a.querySelectorAll<HTMLElement>('.l').forEach((el) => {
+        // Ancho de la letra sin contar el giro: getBoundingClientRect incluye la
+        // rotación (y una animación en curso), así que una letra vertical o a
+        // medio deslizar se mediría por su alto y las letras quedarían separadas.
+        const w = parseFloat(getComputedStyle(el).width);
+        letras.push({ el, u: u + w / 2, w, h: 0 });
+        u += w;
+      });
+    });
+    largo = u;
+    nav.classList.add('is-track');
+    for (const l of letras) l.h = l.el.offsetHeight;
+    // Si no cabe en la columna izquierda, se achica la letra y se vuelve a medir una vez
+    const cabe = window.innerHeight - (Y0 + R) - 48;
+    if (!nav.style.getPropertyValue('--tam-menu') && largo > cabe) {
+      nav.style.setProperty('--tam-menu', `${Math.max(13, Math.floor((20 * cabe) / largo))}px`);
+      medir(true);
+    }
+  }
+
+  // Punto del camino a la distancia s (medida desde abajo a la izquierda)
+  function punto(s: number, alto: number): [number, number, number] {
+    const finVertical = alto - (Y0 + R);
+    const curva = (Math.PI * R) / 2;
+    if (s <= finVertical) return [X0, alto - s, -90];
+    if (s <= finVertical + curva) {
+      const f = (s - finVertical) / R;
+      return [X0 + R - R * Math.cos(f), Y0 + R - R * Math.sin(f), -90 + (f * 180) / Math.PI];
+    }
+    return [X0 + R + (s - finVertical - curva), Y0, 0];
+  }
+
+  let pendiente = false;
+  function pintar() {
+    pendiente = false;
+    if (!escritorio.matches) return;
+    const alto = window.innerHeight;
+    const ancho = document.documentElement.clientWidth;
+    const finVertical = alto - (Y0 + R);
+    const curva = (Math.PI * R) / 2;
+
+    // Inicio: centrado en la columna izquierda. Final: centrado en la fila superior.
+    // (si no cabe centrado, se apoya arriba para que no doble la esquina antes de tiempo)
+    const desde = Math.max(24, Math.min(alto / 2 - largo / 2, finVertical - largo));
+    const hasta = finVertical + curva + (ancho / 2 - (X0 + R)) - largo / 2;
+    // El recorrido se completa al bajar el 70 % de la altura de la pantalla
+    const p = Math.min(1, Math.max(0, window.scrollY / (alto * 0.7)));
+    const s0 = desde + (hasta - desde) * p;
+
+    for (const l of letras) {
+      const [x, y, giro] = punto(s0 + l.u, alto);
+      l.el.style.transform = `translate(${x - l.w / 2}px, ${y - l.h / 2}px) rotate(${giro}deg)`;
+    }
+  }
+  const pedir = () => {
+    if (!pendiente) {
+      pendiente = true;
+      requestAnimationFrame(pintar);
+    }
+  };
+
+  function preparar() {
+    if (escritorio.matches) {
+      medir();
+      pintar();
+    } else {
+      nav.classList.remove('is-track');
+      letras.forEach((l) => (l.el.style.transform = ''));
+    }
+  }
+
+  window.addEventListener('scroll', pedir, { passive: true });
+  window.addEventListener('resize', preparar);
+  // Hay que medir con la fuente real: se vuelve a medir cuando termina de cargar
+  document.fonts.load('600 20px "Saira Variable"').then(preparar);
+  document.fonts.addEventListener('loadingdone', preparar);
+  preparar();
+
+  // Menú móvil
+  const toggle = nav.querySelector<HTMLButtonElement>('.nav__toggle')!;
+  const cerrarMenu = () => {
+    nav.classList.remove('is-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  };
+  toggle.addEventListener('click', () => {
+    const abierto = nav.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', String(abierto));
+    document.body.style.overflow = abierto ? 'hidden' : '';
+  });
+
+  // Al llegar a otra página (el menú se conserva): marca la página actual
+  // y desliza las letras a su posición en lugar de saltar.
+  let suave: number | undefined;
+  document.addEventListener('astro:after-swap', () => {
+    cerrarMenu();
+    const ruta = location.pathname;
+    nav.querySelectorAll<HTMLAnchorElement>('.nav__menu a').forEach((a) => {
+      const href = a.getAttribute('href')!;
+      const activo = href === '/' ? ruta === '/' : ruta.startsWith(href);
+      a.classList.toggle('is-active', activo);
+      if (activo) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    nav.classList.add('nav--suave');
+    clearTimeout(suave);
+    suave = window.setTimeout(() => nav.classList.remove('nav--suave'), 950);
+    pintar();
+  });
+  // La página nueva puede ajustar el scroll después del cambio: se recalcula
+  document.addEventListener('astro:page-load', pedir);
+</script>

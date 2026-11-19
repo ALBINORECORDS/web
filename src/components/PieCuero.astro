@@ -1,0 +1,392 @@
+---
+// Pie de página (LeatherFooter de plantilla-react, con los colores de Albiño):
+// panel flotante con el menú, firma que se dibuja, titular, botón a WhatsApp,
+// foto recortada a la derecha y objetos 3D que flotan.
+// `embebido`: va dentro de la sección final del inicio (Fundacion), que le cambia el fondo
+// de claro a oscuro; fuera de ahí siempre es oscuro.
+import Icon from './Icon.astro';
+import Marcador from './Marcador.astro';
+import { menu, site, whatsapp } from '../data/site';
+import { firma, pie } from '../data/pie';
+
+interface Props { embebido?: boolean }
+const { embebido = false } = Astro.props;
+const anio = new Date().getFullYear();
+---
+<footer class:list={['cuero', { 'cuero--embebido': embebido }]} data-cuero={embebido ? undefined : ''}>
+  <div class="cuero__recorte">
+    <Marcador tipo="recorte" {...pie.recorte} />
+  </div>
+
+  <nav class="cuero__panel" aria-label="Pie de página" data-panel>
+    <span class="cuero__textura" aria-hidden="true"></span>
+    <span class="cuero__luz" aria-hidden="true"></span>
+    <a href="/" aria-label={`${site.nombre} – inicio`}>
+      <img class="cuero__logo" src="/media/logo-blanco.webp" alt="" width="600" height="880" loading="lazy" />
+    </a>
+    <ul>
+      {menu.map((item) => (
+        <li>
+          <a href={item.href} class="cuero__enlace">
+            <span>{item.texto}</span>
+            <span aria-hidden="true">{item.texto}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <!-- Objeto a la izquierda e iconos de redes a la derecha, en la misma fila -->
+    <div class="cuero__fila">
+      <div class="cuero__objeto"><Marcador tipo="recorte" sinTexto {...pie.objeto} /></div>
+      <div class="cuero__redes">
+        {site.redes.map((red) => (
+          <a href={red.url} target="_blank" rel="noopener" aria-label={red.nombre} data-red={red.icono}>
+            <Icon name={red.icono} size={24} />
+          </a>
+        ))}
+      </div>
+    </div>
+    <div class="cuero__abajo">
+      <span>© {anio} {site.nombre}</span>
+      <a href={whatsapp(pie.cta.mensaje)} target="_blank" rel="noopener">WhatsApp</a>
+      <span>{site.lema}</span>
+      <span>Derechos reservados</span>
+    </div>
+  </nav>
+
+  <div class="cuero__flotantes" aria-hidden="true">
+    {pie.flotantes.map((o, i) => (
+      <span class="cuero__flota" style={`left: ${o.x}%; top: ${o.y}%; width: ${o.tam}vw; --prof: ${o.prof}; --giro: ${o.giro}deg; --i: ${i}`}>
+        <img src={o.src} alt="" loading="lazy" />
+      </span>
+    ))}
+  </div>
+
+  <div class="cuero__centro">
+    <svg class="cuero__firma" viewBox="0 0 220 120" aria-hidden="true"><path d={firma} /></svg>
+    <h2>{pie.titular}</h2>
+    <a class="cuero__cta" href={whatsapp(pie.cta.mensaje)} target="_blank" rel="noopener" aria-label={`${pie.cta.texto} por WhatsApp`}>
+      <span class="cuero__cta-texto">{pie.cta.texto}</span>
+      <Icon name="whatsapp" size={40} class="cuero__cta-icono" />
+    </a>
+  </div>
+
+</footer>
+
+<style>
+  .cuero {
+    position: relative;
+    height: 100vh;
+    height: 100svh;
+    min-height: 640px;
+    overflow: hidden;
+    background: var(--negro);
+    color: var(--texto);
+  }
+  .cuero--embebido { position: absolute; inset: 0; min-height: 0; overflow: visible; background: none; }
+
+  /* Persona: ocupa casi todo el alto, apoyada abajo y cortada por el borde derecho */
+  .cuero__recorte { position: absolute; left: 75vw; top: 8%; width: 44vw; height: 92%; will-change: transform; }
+  .cuero__recorte :global(img) { object-position: 0 100%; }
+
+  /* ---------- Panel flotante ---------- */
+  .cuero__panel {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    bottom: 16px;
+    z-index: 3;
+    display: grid;
+    grid-template-rows: auto 1fr auto auto;
+    width: 310px;
+    padding: 26px;
+    border-radius: 18px;
+    /* Cristal: casi transparente, desenfoca lo de atrás y tiene un borde claro con reflejo */
+    border: 1px solid rgba(255, 255, 255, .16);
+    background: linear-gradient(155deg, rgba(255, 255, 255, .12) 0%, rgba(255, 255, 255, .04) 45%, rgba(255, 255, 255, .02) 100%);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), inset 0 -1px 0 rgba(255, 255, 255, .05), 0 24px 60px rgba(0, 0, 0, .45);
+    overflow: hidden;
+    isolation: isolate;
+    animation: cuero-flota 6s ease-in-out infinite;
+  }
+  /* Grano muy suave y un reflejo blanco que sigue al mouse, como luz sobre vidrio */
+  .cuero__textura, .cuero__luz { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+  .cuero__textura {
+    opacity: .07;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1.4 -.25'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+      repeating-linear-gradient(115deg, rgba(255, 255, 255, .05) 0 1px, transparent 1px 7px);
+  }
+  .cuero__luz {
+    opacity: 0;
+    background: radial-gradient(240px circle at var(--luz-x, 50%) var(--luz-y, 30%), rgba(255, 255, 255, .13), transparent 70%);
+    transition: opacity .5s;
+  }
+  .cuero__panel:hover .cuero__luz { opacity: 1; }
+  .cuero__panel:hover { border-color: rgba(255, 255, 255, .28); }
+  .cuero__logo { width: 38px; height: auto; }
+  .cuero__panel ul { align-self: start; display: grid; gap: 14px; margin: 0; padding: 110px 0 0; list-style: none; }
+  /* El texto se repite debajo en naranja y sube al pasar el mouse */
+  .cuero__enlace {
+    position: relative;
+    display: block;
+    height: 36px;
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 36px;
+    text-transform: uppercase;
+  }
+  .cuero__enlace span { display: block; transition: transform .38s cubic-bezier(.16, 1, .3, 1); }
+  .cuero__enlace span + span { color: var(--acento); }
+  .cuero__enlace:hover span, .cuero__enlace:focus-visible span { transform: translateY(-100%); }
+  .cuero__fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 18px; }
+  .cuero__objeto { flex: none; width: 92px; height: 86px; transform: rotate(-7deg); filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .45)); transition: transform .5s cubic-bezier(.16, 1, .3, 1); }
+  .cuero__panel:hover .cuero__objeto { transform: rotate(4deg) scale(1.06); }
+  .cuero__redes { display: flex; gap: 14px; }
+  .cuero__redes a { display: grid; place-items: center; transition: color .3s, transform .3s; }
+  .cuero__redes a:hover { transform: translateY(-3px); color: var(--marca, var(--acento)); }
+  /* Al pasar el mouse cada red toma su color */
+  .cuero__redes [data-red="instagram"] { --marca: #E1306C; }
+  .cuero__redes [data-red="tiktok"] { --marca: #25F4EE; }
+  .cuero__redes [data-red="youtube"] { --marca: #FF0000; }
+  .cuero__redes [data-red="facebook"] { --marca: #1877F2; }
+  /* Línea divisoria y créditos en dos columnas */
+  .cuero__abajo {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    gap: 6px 12px;
+    padding-top: 16px;
+    white-space: nowrap;
+    border-top: 1px solid currentColor;
+    border-top-color: color-mix(in oklab, currentColor 22%, transparent);
+    font-size: 11.5px;
+  }
+  .cuero__abajo > * { opacity: .7; }
+  .cuero__abajo > :nth-child(even) { text-align: right; }
+  .cuero__abajo a:hover { opacity: 1; color: var(--acento); }
+  @keyframes cuero-flota {
+    0%, 100% { transform: translateY(0) rotate(-1.6deg); }
+    50% { transform: translateY(-9px) rotate(1.8deg); }
+  }
+
+  /* ---------- Centro: firma, titular y botón ---------- */
+  .cuero__centro {
+    position: absolute;
+    left: 26.8vw;
+    width: 46.4vw;
+    top: 11%;
+    z-index: 2;
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+  .cuero__firma { width: 22vw; min-width: 180px; height: auto; overflow: visible; }
+  .cuero__firma path {
+    fill: none;
+    stroke: var(--acento);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: stroke-dashoffset 1.6s cubic-bezier(.65, .05, .36, 1), stroke .8s;
+  }
+  .cuero__centro h2 {
+    margin: 2vh 0 6vh;
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: clamp(32px, 4.8vw, 84px);
+    font-weight: 600;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .cuero__cta {
+    --alto: max(11vh, 64px);
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    width: max(18.8vw, 200px);
+    height: var(--alto);
+    border-radius: 999px;
+    background: var(--acento);
+    color: var(--texto);
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: clamp(18px, 1.7vw, 26px);
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    transition: width .7s cubic-bezier(.65, .05, .36, 1), background .6s, color .3s, transform .3s;
+  }
+  .cuero__cta:hover { transform: translateY(-2px); background: var(--texto); color: var(--negro); }
+  /* Relevo sin encimarse: lo que sale se va de inmediato y lo que entra espera a que termine.
+     Cada estado lleva su propia transición, así el retraso solo se aplica al que aparece. */
+  .cuero__cta-texto { white-space: nowrap; transition: opacity .3s .3s, transform .4s .3s; }
+  .cuero__cta :global(.cuero__cta-icono) {
+    position: absolute;
+    width: 46%;
+    height: auto;
+    opacity: 0;
+    transform: scale(.4) rotate(-30deg);
+    transition: opacity .2s, transform .3s;
+  }
+  /* 1.5 s después de llegar al pie: círculo verde con el logo de WhatsApp */
+  /* Con el mouse cerca (.is-abierto) vuelve a ser el botón "Escríbenos" */
+  .cuero__cta.is-whatsapp:not(.is-abierto) { width: var(--alto); background: #25D366; color: #fff; }
+  .cuero__cta.is-whatsapp:not(.is-abierto) .cuero__cta-texto { opacity: 0; transform: scale(.8); transition: opacity .2s, transform .3s; }
+  .cuero__cta.is-whatsapp:not(.is-abierto) :global(.cuero__cta-icono) {
+    opacity: 1;
+    transform: none;
+    transition: opacity .4s .3s, transform .6s .3s cubic-bezier(.34, 1.56, .64, 1);
+  }
+
+  /* ---------- Objetos flotantes ---------- */
+  /* Se mecen solos y se desplazan con el mouse según su profundidad (al pasar encima no crecen) */
+  .cuero__flotantes { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .cuero__flota {
+    position: absolute;
+    min-width: 44px;
+    pointer-events: auto;
+    opacity: .7;                    /* semitransparentes; se ven completas al pasar el mouse */
+    transform: translate(calc(var(--mx, 0) * var(--prof) * 1px), calc(var(--my, 0) * var(--prof) * 1px));
+    transition: transform .9s cubic-bezier(.16, 1, .3, 1), opacity .8s;
+  }
+  .cuero__flota img {
+    display: block;
+    width: 100%;
+    height: auto;
+    rotate: var(--giro);
+    filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .55));
+    animation: cuero-mece 5.5s ease-in-out calc(var(--i) * -1.3s) infinite;
+  }
+  .cuero__flota:hover { opacity: 1; }
+  @keyframes cuero-mece {
+    0%, 100% { translate: 0 0; rotate: var(--giro); }
+    50% { translate: 0 -12px; rotate: calc(var(--giro) * -.4); }
+  }
+
+  /* ---------- Dentro del inicio, mientras el fondo es claro ---------- */
+  .cuero--embebido .cuero__panel,
+  .cuero--embebido .cuero__centro,
+  .cuero--embebido .cuero__logo {
+    transition: background-color .8s cubic-bezier(.65, .05, .36, 1), color .8s cubic-bezier(.65, .05, .36, 1),
+      opacity .8s cubic-bezier(.65, .05, .36, 1), filter .8s cubic-bezier(.65, .05, .36, 1);
+  }
+  :global(.fundacion.is-activa:not(.is-oscuro)) .cuero--embebido .cuero__panel { background: rgba(0, 0, 0, .06); color: var(--negro); }
+  :global(.fundacion.is-activa:not(.is-oscuro)) .cuero--embebido .cuero__logo { filter: invert(1); }
+  :global(.fundacion.is-activa:not(.is-oscuro)) .cuero--embebido .cuero__centro { color: var(--negro); opacity: .5; }
+  :global(.fundacion.is-activa:not(.is-oscuro)) .cuero--embebido .cuero__firma path { stroke: var(--negro); }
+  :global(.fundacion.is-activa:not(.is-oscuro)) .cuero--embebido .cuero__flota { opacity: 0; pointer-events: none; }
+
+  @media (max-width: 799px) {
+    .cuero__panel { top: auto; width: auto; right: 16px; grid-template-rows: auto auto auto; }
+    .cuero__panel ul { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 12px 0; }
+    .cuero__enlace { font-size: 18px; height: 24px; line-height: 24px; }
+    .cuero__objeto { width: 64px; height: 60px; }
+    .cuero__centro { left: 4vw; width: 92vw; top: 10%; }
+    .cuero__centro h2 { font-size: 9vw; }
+    .cuero__firma { width: 46vw; }
+    .cuero__recorte { left: 52vw; top: 18%; width: 80vw; height: 52%; opacity: .45; }
+    /* En celular solo quedan dos, a los lados de la firma */
+    .cuero__flota:nth-child(n + 3) { display: none; }
+    .cuero__flota:nth-child(1) { left: 4% !important; top: 7% !important; width: 12vw !important; }
+    .cuero__flota:nth-child(2) { left: 80% !important; top: 8% !important; width: 10vw !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cuero__panel { animation: none; }
+    .cuero__objeto { transition: none; }
+    .cuero__flota img { animation: none; }
+    .cuero__flota { transform: none; }
+  }
+</style>
+
+<script>
+  import { mostrarWhatsapp, volverABoton } from '../scripts/boton-whatsapp';
+  import { salidaNav } from '../scripts/salida-nav';
+  // Firma que se dibuja y entrada del centro. El pie del inicio lo maneja Fundacion;
+  // aquí solo el pie normal de las demás páginas.
+  const conMovimiento = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const clamp = (n: number) => Math.max(0, Math.min(1, n));
+  const smooth = (t: number) => { const x = clamp(t); return x * x * (3 - 2 * x); };
+
+  // Prepara el trazo para dibujarlo: queda oculto hasta que se firma
+  function prepararFirma(raiz: ParentNode) {
+    raiz.querySelectorAll<SVGPathElement>('.cuero__firma path').forEach((p) => {
+      if (p.dataset.listo) return;
+      p.dataset.listo = '1';
+      const largo = Math.ceil(p.getTotalLength());
+      p.dataset.largo = String(largo);
+      p.style.strokeDasharray = String(largo);
+      p.style.strokeDashoffset = String(largo);
+    });
+  }
+  const firmar = (pie: Element) => pie.querySelectorAll<SVGPathElement>('.cuero__firma path').forEach((p) => { p.style.strokeDashoffset = '0'; });
+  // Borra la firma al instante, sin la animación de vuelta, para que se dibuje de nuevo al regresar
+  const borrar = (pie: Element) => pie.querySelectorAll<SVGPathElement>('.cuero__firma path').forEach((p) => {
+    p.style.transition = 'none';
+    p.style.strokeDashoffset = p.dataset.largo ?? '0';
+    p.getBoundingClientRect();
+    p.style.transition = '';
+  });
+
+  let pie: HTMLElement | null = null;
+  let firmado = false;
+  let pedido = 0;
+
+  function mover() {
+    pedido = 0;
+    if (!pie) return;
+    const h = window.innerHeight;
+    const top = pie.getBoundingClientRect().top;
+    const p = clamp((h - top) / h);
+    salidaNav(top);
+    // Se borra cuando el pie casi sale de la pantalla, para volver a firmarse al regresar
+    if (p < 0.1 && firmado) { firmado = false; borrar(pie); volverABoton(pie); }
+    if (top > h) return;
+    const entra = smooth(p / 0.6);
+    const centro = pie.querySelector<HTMLElement>('.cuero__centro')!;
+    centro.style.transform = `translateY(${((1 - entra) * 60).toFixed(1)}px)`;
+    centro.style.opacity = (0.15 + 0.85 * entra).toFixed(3);
+    pie.querySelector<HTMLElement>('.cuero__recorte')!.style.transform = `translateY(${((1 - entra) * 18).toFixed(2)}%)`;
+    if (p > 0.3 && !firmado) { firmado = true; firmar(pie); mostrarWhatsapp(pie); }
+  }
+
+  function iniciar() {
+    pie = document.querySelector<HTMLElement>('[data-cuero]');
+    firmado = false;
+    if (!pie && !document.querySelector('[data-fundacion]')) salidaNav(null);
+    if (!pie || !conMovimiento) return;
+    prepararFirma(pie);
+    mover();
+  }
+
+  if (conMovimiento) {
+    window.addEventListener('scroll', () => { if (!pedido && pie) pedido = requestAnimationFrame(mover); }, { passive: true });
+  }
+
+  // Objetos flotantes: se desplazan con el mouse según su profundidad (también en el pie del inicio)
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const cuero = (e.target as Element | null)?.closest?.('.cuero') as HTMLElement | null;
+    if (!cuero) return;
+    const r = cuero.getBoundingClientRect();
+    cuero.style.setProperty('--mx', (((e.clientX - r.left) / r.width - 0.5) * 2).toFixed(3));
+    cuero.style.setProperty('--my', (((e.clientY - r.top) / r.height - 0.5) * 2).toFixed(3));
+  }, { passive: true });
+
+  // Luz del panel: sigue al mouse (también en el pie del inicio)
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const panel = (e.target as Element | null)?.closest?.('[data-panel]') as HTMLElement | null;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    panel.style.setProperty('--luz-x', `${(e.clientX - r.left).toFixed(0)}px`);
+    panel.style.setProperty('--luz-y', `${(e.clientY - r.top).toFixed(0)}px`);
+  }, { passive: true });
+  iniciar();
+  document.addEventListener('astro:page-load', iniciar);
+</script>

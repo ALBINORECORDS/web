@@ -1,0 +1,298 @@
+---
+// Galería de servicios: copias impresas horizontales que pasan junto a la cámara al hacer
+// scroll (FilmGalleryScene de plantilla-react). Cada foto lleva a su sección en /servicios/.
+// Sin JavaScript o con movimiento reducido se muestra como una lista normal.
+import { servicios } from '../data/servicios';
+
+// Cielo estrellado de fondo: 3 capas de puntos grises. Las de lejos son pequeñas y tenues,
+// las de cerca más grandes y claras; cada capa se mueve a distinta velocidad con el scroll.
+// Se generan al compilar con una semilla fija, así siempre salen iguales.
+function azar(semilla: number) {
+  let v = semilla;
+  return () => ((v = (v * 16807) % 2147483647) - 1) / 2147483646;
+}
+function capa(semilla: number, tam: number, cuantas: number, radio: [number, number], luz: [number, number]) {
+  const r = azar(semilla);
+  let puntos = '';
+  for (let i = 0; i < cuantas; i++) {
+    const x = (r() * tam).toFixed(1);
+    const y = (r() * tam).toFixed(1);
+    const rad = (radio[0] + r() * (radio[1] - radio[0])).toFixed(2);
+    const op = (luz[0] + r() * (luz[1] - luz[0])).toFixed(2);
+    puntos += `<circle cx="${x}" cy="${y}" r="${rad}" fill="#a3a3a8" fill-opacity="${op}"/>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${tam}" height="${tam}">${puntos}</svg>`;
+  return { fondo: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`, tam };
+}
+const estrellas = [
+  capa(11, 520, 560, [0.5, 0.9], [0.2, 0.45]),  // lejos
+  capa(29, 700, 300, [0.9, 1.5], [0.32, 0.6]),  // medio
+  capa(47, 900, 95, [1.4, 2.3], [0.5, 0.8]),    // cerca
+];
+---
+<section id="servicios" class="pelicula" data-pelicula>
+  <div class="pelicula__escena">
+    <div class="pelicula__cielo" aria-hidden="true">
+      {estrellas.map((c) => <i style={`background-image: ${c.fondo}; background-size: ${c.tam}px;`}></i>)}
+    </div>
+    <div class="pelicula__cabeza">
+      <h2 class="titulo-xl">Te Ofrecemos</h2>
+    </div>
+
+    <div class="pelicula__pista">
+      {servicios.map((s) => (
+        <a class="copia" href={`/servicios/#${s.id}`} aria-label={`Ver ${s.titulo}`}>
+          <img src={s.imagen} alt="" width="1200" height="800" decoding="async" />
+          <span>{s.titulo}</span>
+        </a>
+      ))}
+    </div>
+
+    <div class="pelicula__miniaturas" role="group" aria-label="Elegir servicio">
+      {servicios.map((s) => (
+        <button type="button" aria-label={`Mostrar ${s.titulo}`}>
+          <img src={s.imagen} alt="" width="42" height="42" decoding="async" />
+        </button>
+      ))}
+    </div>
+
+    <div class="pelicula__barra"><i></i></div>
+  </div>
+</section>
+
+<style>
+  /* ---------- Lista normal (sin JavaScript o con movimiento reducido) ---------- */
+  /* Fondo casi negro con un cielo estrellado de 3 capas */
+  .pelicula { position: relative; padding: 120px var(--margen); background: #0c0c0e; }
+  .pelicula__cielo { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .pelicula__cielo i { position: absolute; inset: -10% 0 -40%; background-repeat: repeat; will-change: transform; }
+  .pelicula__cabeza, .pelicula__pista { position: relative; }
+  .pelicula__cabeza { display: grid; justify-items: center; margin-bottom: 48px; text-align: center; }
+  .pelicula__cabeza h2 { font-size: clamp(36px, 9vw, 130px); }
+  .pelicula__pista { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 24px; }
+  .pelicula__miniaturas, .pelicula__barra { display: none; }
+
+  .copia {
+    display: block;
+    padding: 8px 8px 0;
+    background: #e9e2d6;            /* marco de copia impresa */
+    color: #101010;
+    box-shadow: 0 22px 65px rgba(0, 0, 0, .47);
+  }
+  .copia img { width: 100%; aspect-ratio: 3 / 2; object-fit: cover; }
+  .copia span {
+    display: block;
+    padding: 12px 6px 14px;
+    font-family: var(--font-display);
+    font-stretch: var(--ancho-display);
+    font-size: clamp(20px, 2.6vw, 38px);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+  .copia:focus-visible { outline: 2px solid var(--acento); outline-offset: 4px; }
+
+  /* ---------- Escena fija con el scroll ---------- */
+  .pelicula.is-activa { height: calc(100svh + var(--largo, 600svh)); padding: 0; }
+  /* El cielo va en la escena fija; cada capa sube a su ritmo con el scroll (lo mueve el script) */
+  .is-activa .pelicula__escena { position: sticky; top: 0; height: 100svh; overflow: clip; background: #0c0c0e; }
+  .is-activa .pelicula__cabeza {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    place-content: center;
+    margin: 0;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+  .is-activa .pelicula__pista { position: absolute; inset: 0; display: block; perspective: 1200px; will-change: opacity; }
+  .is-activa .copia {
+    position: absolute;
+    left: 50%;
+    top: 47%;
+    width: min(56vw, 88svh);
+    will-change: transform, opacity;
+  }
+  .is-activa .pelicula__miniaturas {
+    position: absolute;
+    left: 50%;
+    bottom: 56px;
+    z-index: 40;
+    display: flex;
+    gap: 8px;
+    transform: translateX(-50%);
+  }
+  .pelicula__miniaturas button {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    opacity: .5;
+    transition: opacity .2s, transform .25s var(--ease);
+  }
+  .pelicula__miniaturas button[aria-pressed="true"] { opacity: 1; transform: translateY(-4px); outline: 1px solid var(--acento); outline-offset: 2px; }
+  .pelicula__miniaturas img { width: 100%; height: 100%; object-fit: cover; }
+  .is-activa .pelicula__barra {
+    position: absolute;
+    inset: auto var(--margen) 32px;
+    z-index: 40;
+    display: block;
+    height: 1px;
+    background: var(--borde);
+  }
+  .pelicula__barra i { display: block; height: 100%; background: var(--acento); transform: scaleX(.1); transform-origin: left; }
+
+  @media (max-width: 799px) {
+    .pelicula.is-activa { --largo: 400svh; }
+    .is-activa .copia { width: 80vw; }
+  }
+</style>
+
+<script>
+  import { activarRuedaSuave, alcance } from '../scripts/rueda-suave';
+
+  const clamp = (n: number) => Math.max(0, Math.min(1, n));
+  const smooth = (t: number) => { const x = clamp(t); return x * x * (3 - 2 * x); };
+  const phase = (p: number, a: number, b: number) => clamp((p - a) / (b - a));
+  const conMovimiento = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const INICIO = 0.12;    // tramo de la escena en que pasan las fotos
+  const FIN = 0.9;
+  const REPOSO = 0.2;
+  const PROFUNDIDAD = [0.06, 0.16, 0.32]; // cuánto sube cada capa del cielo en toda la escena (lejos, medio, cerca)     // parte del paso entre fotos en que cada una se queda quieta, a cada lado
+  const SUAVIDAD = 0.3;   // cuánto alcanzan las animaciones al scroll por cuadro
+
+  type Escena = {
+    el: HTMLElement;
+    cabeza: HTMLElement;
+    pista: HTMLElement;
+    barra: HTMLElement;
+    capas: HTMLElement[];
+    copias: HTMLElement[];
+    botones: HTMLElement[];
+    top: number;
+    rango: number;
+    activa: number;
+    p: number;
+  };
+  let escena: Escena | null = null;
+  let pos = window.scrollY;
+  let vw = window.innerWidth;
+  let vh = window.innerHeight;
+  let cuadroPedido = 0;
+  let ultimoCuadro = 0;
+
+  function pintar() {
+    if (!escena) return;
+    const e = escena;
+    const p = Math.round(clamp((pos - e.top) / e.rango) * 10000) / 10000;
+    if (p === e.p) return;
+    e.p = p;
+    const chico = vw < 800;
+    const ultimo = e.copias.length - 1;
+
+    e.pista.style.opacity = String(0.12 + smooth(phase(p, 0.01, 0.08)) * 0.88);
+    const salida = phase(p, 0.03, 0.09);
+    e.cabeza.style.opacity = String(1 - smooth(salida));
+    e.cabeza.style.transform = `translateY(${-salida * 45}px)`;
+
+    const recorrido = phase(p, INICIO, FIN);
+    // Cada foto se detiene en el centro y luego pasa a la siguiente
+    const crudo = recorrido * ultimo;
+    const base = Math.min(Math.floor(crudo), ultimo);
+    const camino = base + smooth(phase(crudo - base, REPOSO, 1 - REPOSO));
+    e.copias.forEach((copia, i) => {
+      const d = i - camino;
+      const lado = i % 2 ? -1 : 1;
+      const foco = 1 - smooth(Math.abs(d));
+      const z = -Math.max(d, 0) * 950 + Math.max(-d, 0) * 760;
+      const x = lado * vw * (chico ? 0.72 : 0.52) * (1 + Math.max(d, 0) * 0.4) * (1 - foco);
+      const y = (i % 2 ? 1 : -1) * vh * 0.07 * (1 - foco);
+      copia.style.transform = `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px) rotateY(${(-lado * (1 - foco) * 16).toFixed(2)}deg)`;
+      copia.style.opacity = String((1 - smooth(phase(-d, 0.02, 0.45))) * (1 - phase(d, 2, 3)));
+      copia.style.visibility = d < -0.45 || d > 2.8 ? 'hidden' : 'visible';
+    });
+    e.barra.style.transform = `scaleX(${(0.1 + recorrido * 0.9).toFixed(3)})`;
+    // Profundidad: las estrellas de cerca suben más que las de lejos
+    e.capas.forEach((c, i) => { c.style.transform = `translate3d(0, ${(-p * vh * PROFUNDIDAD[i]).toFixed(1)}px, 0)`; });
+
+    const activa = Math.min(ultimo, Math.round(camino));
+    if (activa !== e.activa) {
+      e.activa = activa;
+      e.botones.forEach((b, i) => b.setAttribute('aria-pressed', String(i === activa)));
+    }
+  }
+
+  function cuadro(ahora: number) {
+    cuadroPedido = 0;
+    const ms = Math.min(50, ahora - ultimoCuadro || 16.7);
+    ultimoCuadro = ahora;
+    const y = window.scrollY;
+    const falta = y - pos;
+    pos = Math.abs(falta) < 0.5 ? y : pos + falta * alcance(SUAVIDAD, ms);
+    pintar();
+    if (pos !== y) pedir();
+  }
+  const pedir = () => {
+    if (!cuadroPedido && escena) cuadroPedido = requestAnimationFrame(cuadro);
+  };
+
+  // Guarda las medidas para no leerlas en cada cuadro
+  function medir() {
+    if (!escena) return;
+    vw = window.innerWidth;
+    vh = window.innerHeight;
+    escena.top = escena.el.getBoundingClientRect().top + window.scrollY;
+    escena.rango = Math.max(1, escena.el.offsetHeight - vh);
+    escena.p = -1;
+  }
+
+  function iniciar() {
+    const el = document.querySelector<HTMLElement>('[data-pelicula]');
+    escena = null;
+    if (!el || !conMovimiento) return;
+    el.classList.add('is-activa');
+    const e: Escena = {
+      el,
+      cabeza: el.querySelector<HTMLElement>('.pelicula__cabeza')!,
+      pista: el.querySelector<HTMLElement>('.pelicula__pista')!,
+      barra: el.querySelector<HTMLElement>('.pelicula__barra i')!,
+      capas: [...el.querySelectorAll<HTMLElement>('.pelicula__cielo i')],
+      copias: [...el.querySelectorAll<HTMLElement>('.copia')],
+      botones: [...el.querySelectorAll<HTMLElement>('.pelicula__miniaturas button')],
+      top: 0,
+      rango: 1,
+      activa: -1,
+      p: -1,
+    };
+    e.copias.forEach((copia, i) => { copia.style.zIndex = String(30 - i); });
+    // Se decodifican antes de llegar, para que no aparezca el marco vacío
+    el.querySelectorAll('img').forEach((img) => { img.decode().catch(() => {}); });
+    e.botones.forEach((b, i) => {
+      b.addEventListener('click', () => {
+        const destino = INICIO + (i / (e.botones.length - 1)) * (FIN - INICIO);
+        window.scrollTo({ top: e.top + destino * e.rango, behavior: 'smooth' });
+      });
+    });
+    escena = e;
+    medir();
+    pos = window.scrollY;
+    pintar();
+  }
+
+  if (conMovimiento) {
+    window.addEventListener('scroll', pedir, { passive: true });
+    new ResizeObserver(() => {
+      if (escena) { medir(); pintar(); }
+    }).observe(document.body);
+    activarRuedaSuave(() => escena !== null);
+  }
+
+  // Si este script llega con una página nueva, puede cargarse después del aviso
+  // de "página lista": por eso también se inicia en cuanto se ejecuta.
+  iniciar();
+  document.addEventListener('astro:page-load', iniciar);
+</script>

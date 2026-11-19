@@ -1,0 +1,84 @@
+---
+// Cielo estrellado de fondo: 3 capas de puntos grises. Las de lejos son pequeñas y tenues,
+// las de cerca más grandes y claras, y cada capa se mueve a distinta velocidad con el scroll,
+// lo que da sensación de profundidad. Se genera al compilar con una semilla fija.
+// Uso: dentro de un contenedor con position: relative (el cielo lo cubre entero, por detrás).
+//   <div style="position: relative"><CieloEstrellado /> ...contenido... </div>
+// Es el mismo cielo de la galería del inicio (FilmServicios), que tiene su propia copia.
+// fuerza: multiplica cuánto se mueven las estrellas (1 = suave, 2.5 = muy notorio).
+// Si el cielo está dentro de un elemento con [data-cielo-zona] (por ejemplo una sección que se
+// queda fija), el movimiento se calcula con esa zona, así sigue moviéndose mientras está fija.
+interface Props { semilla?: number; fuerza?: number }
+const { semilla = 11, fuerza = 1 } = Astro.props;
+
+function azar(s: number) {
+  let v = s;
+  return () => ((v = (v * 16807) % 2147483647) - 1) / 2147483646;
+}
+function capa(s: number, tam: number, cuantas: number, radio: [number, number], luz: [number, number]) {
+  const r = azar(s);
+  let puntos = '';
+  for (let i = 0; i < cuantas; i++) {
+    const x = (r() * tam).toFixed(1);
+    const y = (r() * tam).toFixed(1);
+    const rad = (radio[0] + r() * (radio[1] - radio[0])).toFixed(2);
+    const op = (luz[0] + r() * (luz[1] - luz[0])).toFixed(2);
+    puntos += `<circle cx="${x}" cy="${y}" r="${rad}" fill="#a3a3a8" fill-opacity="${op}"/>`;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${tam}" height="${tam}">${puntos}</svg>`;
+  return { fondo: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`, tam };
+}
+const capas = [
+  capa(semilla, 520, 560, [0.5, 0.9], [0.2, 0.45]),       // lejos
+  capa(semilla + 18, 700, 300, [0.9, 1.5], [0.32, 0.6]),  // medio
+  capa(semilla + 36, 900, 95, [1.4, 2.3], [0.5, 0.8]),    // cerca
+];
+---
+<div class="cielo" aria-hidden="true" data-cielo data-fuerza={fuerza}>
+  {capas.map((c) => <i data-tam={c.tam} style={`background-image: ${c.fondo}; background-size: ${c.tam}px; bottom: -${c.tam}px;`}></i>)}
+</div>
+
+<style>
+  .cielo { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: #0c0c0e; }
+  /* Cada capa es un mosaico más alto que el cielo: se desplaza en ciclos de su propio tamaño */
+  .cielo i { position: absolute; top: 0; left: 0; right: 0; background-repeat: repeat; will-change: transform; }
+  @media (prefers-reduced-motion: reduce) { .cielo i { will-change: auto; } }
+</style>
+
+<script>
+  import { activarRuedaSuave } from '../scripts/rueda-suave';
+
+  // Profundidad: mientras la sección cruza la pantalla, las estrellas de cerca suben más que las de lejos.
+  // Al bajar suben y al subir bajan.
+  const PROFUNDIDAD = [0.06, 0.16, 0.32];
+  const conMovimiento = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pedido = 0;
+
+  function mover() {
+    pedido = 0;
+    const vh = window.innerHeight;
+    document.querySelectorAll<HTMLElement>('[data-cielo]').forEach((cielo) => {
+      const zona = cielo.closest<HTMLElement>('[data-cielo-zona]') ?? cielo.parentElement!;
+      const r = zona.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > vh) return;
+      const fuerza = Number(cielo.dataset.fuerza || 1);
+      // Cuánto se ha recorrido la zona, en px: 0 cuando asoma por abajo
+      const recorrido = vh - r.top;
+      cielo.querySelectorAll<HTMLElement>('i').forEach((capa, i) => {
+        const tam = Number(capa.dataset.tam);
+        const y = (recorrido * PROFUNDIDAD[i] * fuerza) % tam;
+        capa.style.transform = `translate3d(0, ${(-y).toFixed(1)}px, 0)`;
+      });
+    });
+  }
+  const pedir = () => { if (!pedido) pedido = requestAnimationFrame(mover); };
+
+  if (conMovimiento) {
+    // Rueda suave donde la sección se queda fija: sin ella las estrellas saltan con cada golpe
+    activarRuedaSuave(() => document.querySelector('[data-cielo-zona]') !== null);
+    window.addEventListener('scroll', pedir, { passive: true });
+    window.addEventListener('resize', pedir);
+    document.addEventListener('astro:page-load', pedir);
+    pedir();
+  }
+</script>
