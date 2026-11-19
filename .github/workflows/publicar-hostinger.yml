@@ -1,0 +1,41 @@
+# Publica el sitio en Hostinger cada vez que se sube un cambio a la rama main.
+# GitHub construye el sitio (npm run build) y sube la carpeta dist/ por FTP.
+# Los datos de acceso van en: Settings → Secrets and variables → Actions.
+name: Publicar en Hostinger
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # permite publicar a mano desde la pestaña Actions
+
+concurrency:
+  group: publicar-hostinger
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Construir el sitio
+        run: npm run build
+
+      - name: Subir dist/ a Hostinger por FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: public_html/
