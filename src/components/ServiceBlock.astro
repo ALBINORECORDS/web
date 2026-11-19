@@ -35,7 +35,7 @@ const galeria = servicio.galeria ?? [];
       </div>
 
       {galeria.length > 0 && (
-        <div class:list={['galeria', { 'galeria--grande': servicio.galeriaGrande }]} style={`--n: ${galeria.length}`}>
+        <div class:list={['galeria', { 'galeria--grande': servicio.galeriaGrande, 'galeria--videos': servicio.galeriaVideos }]} style={`--n: ${galeria.length}`}>
           {galeria.map((item, i) => (
             <figure class="galeria__item" style={`--i: ${i}`}>
               {item.tipo === 'video' ? (
@@ -176,6 +176,12 @@ const galeria = servicio.galeria ?? [];
       flex: 1 1 0;
       max-width: min(340px, calc((100svh - 260px) * 9 / 16));
     }
+    /* Videos de redes: la galería toma más ancho que el texto y los videos se superponen un poco */
+    .bloque__dentro:has(> .galeria--videos) { grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 40px; }
+    .galeria--videos { gap: 0; }
+    .galeria--videos .galeria__item { position: relative; max-width: min(300px, calc((100svh - 220px) * 9 / 16)); }
+    .galeria--videos .galeria__item + .galeria__item { margin-left: -26px; }
+    .galeria--videos .galeria__item:hover { z-index: 2; }
   }
   @media (max-width: 1024px) {
     .bloque__dentro.con-galeria { grid-template-columns: 1fr; }

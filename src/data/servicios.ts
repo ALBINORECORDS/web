@@ -14,6 +14,7 @@ export type Servicio = {
   imagen: string;
   galeria?: Medio[];
   galeriaGrande?: boolean;
+  galeriaVideos?: boolean; // videos más grandes y superpuestos, con la galería más ancha que el texto
   anim: 'izquierda' | 'derecha' | 'zoom' | 'cortina' | 'subir';
 };
 
@@ -70,6 +71,7 @@ export const servicios: Servicio[] = [
       { tipo: 'video', src: '/media/redes-sushi.mp4', poster: '/media/redes-sushi.jpg', alt: 'Reel de sushi' },
     ],
     galeriaGrande: true,
+    galeriaVideos: true,
     anim: 'cortina',
   },
   {

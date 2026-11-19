@@ -40,6 +40,11 @@ const capas = [
 
 <style>
   .cielo { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: #0c0c0e; }
+  /* Bordes desvanecidos: el cielo se funde con el negro de lo que hay arriba y abajo (el pie) */
+  .cielo {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 14%, #000 72%, transparent 100%);
+  }
   /* Cada capa es un mosaico más alto que el cielo: se desplaza en ciclos de su propio tamaño */
   .cielo i { position: absolute; top: 0; left: 0; right: 0; background-repeat: repeat; will-change: transform; }
   @media (prefers-reduced-motion: reduce) { .cielo i { will-change: auto; } }
