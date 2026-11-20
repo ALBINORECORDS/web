@@ -5,6 +5,7 @@ import '../styles/global.css';
 import { ClientRouter, fade } from 'astro:transitions';
 import Nav from '../components/Nav.astro';
 import PieCuero from '../components/PieCuero.astro';
+import GlitchPreloader from '../components/GlitchPreloader.astro';
 import { site } from '../data/site';
 
 // pie: false cuando la página ya trae el pie dentro (el inicio, en Fundacion)
@@ -73,6 +74,8 @@ const negocio = {
     <noscript><style>.nav__menu { visibility: visible !important; }</style></noscript>
   </head>
   <body>
+    <!-- Pantalla de carga: una vez por visita, mientras se precarga lo de la primera pantalla -->
+    <GlitchPreloader />
     <Nav />
     <main transition:animation={fade({ duration: '.45s' })}>
       <slot />
@@ -129,7 +132,11 @@ const negocio = {
         { threshold: 0.2 }
       );
       document.addEventListener('astro:page-load', () => {
-        document.querySelectorAll('.reveal, [data-anim]').forEach((el) => io.observe(el));
+        // Con la pantalla de carga encima, las apariciones esperan a que se quite
+        const observar = () => document.querySelectorAll('.reveal, [data-anim]').forEach((el) => io.observe(el));
+        if (document.documentElement.getAttribute('data-precarga') === 'on') {
+          document.addEventListener('precarga:fin', observar, { once: true });
+        } else observar();
 
         // Los videos que llegan con el cambio de página quedan "sin fuente" en el
         // navegador: se recargan para que vuelvan a funcionar (y arrancan si son autoplay).

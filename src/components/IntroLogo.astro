@@ -83,6 +83,11 @@
   function iniciarIntro() {
     const intro = document.getElementById('intro-logo');
     if (!intro || intro.dataset.listo) return;
+    // Con la pantalla de carga encima (GlitchPreloader), la animación espera a que se quite
+    if (document.documentElement.getAttribute('data-precarga') === 'on') {
+      document.addEventListener('precarga:fin', iniciarIntro, { once: true });
+      return;
+    }
     intro.dataset.listo = '1';
 
     const q = (s: string) => intro.querySelector(s) as SVGElement & HTMLElement;
