@@ -64,6 +64,19 @@ const estrellas = [
   /* ---------- Lista normal (sin JavaScript o con movimiento reducido) ---------- */
   /* Fondo casi negro con un cielo estrellado de 3 capas */
   .pelicula { position: relative; padding: 120px var(--margen); background: #0c0c0e; }
+  /* Entrada suave: un degradado desde el negro del hero se funde con las estrellas.
+     Va en la sección, no en la escena fija, así se va con el scroll y no tapa las fotos. */
+  .pelicula::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    height: 38vh;
+    background: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .85) 25%, rgba(0, 0, 0, .4) 60%, transparent 100%);
+    pointer-events: none;
+  }
   .pelicula__cielo { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
   .pelicula__cielo i { position: absolute; inset: -10% 0 -40%; background-repeat: repeat; will-change: transform; }
   .pelicula__cabeza, .pelicula__pista { position: relative; }

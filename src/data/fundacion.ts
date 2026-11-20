@@ -15,7 +15,7 @@ export const fundacion = {
   ],
   leyenda: {
     titulo: 'Albiño Records',
-    texto: 'Música, bodas, podcast, redes y fotografía: una sola productora para tu proyecto.',
+    texto: 'Música, bodas, podcast, redes y fotografía: una sola productora en Ambato para tu proyecto.',
   },
   cta: { texto: 'Conócenos', href: '/nosotros/' },
   titular: ['Nosotros', 'lo creamos'],

@@ -49,7 +49,8 @@ const anio = new Date().getFullYear();
       <span>© {anio} {site.nombre}</span>
       <a href={whatsapp(pie.cta.mensaje)} target="_blank" rel="noopener">WhatsApp</a>
       <span>{site.lema}</span>
-      <span>Derechos reservados</span>
+      <!-- Ubicación en su propia celda: "Productora Audiovisual en Ambato" no cabía en el panel -->
+      <span>{site.ciudad}, {site.pais}</span>
     </div>
   </nav>
 

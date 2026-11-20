@@ -2,14 +2,22 @@
 // DATOS GENERALES DEL SITIO — edita aquí nombre, redes y WhatsApp
 // ============================================================
 // Correo que RECIBE los mensajes del formulario. No se muestra en la página.
-// Correo personal de prueba; cambiar por la clave de FormSubmit una vez activado
-const correoFormulario = 'jp155441@gmail.com';
+// Correo del cliente. El primer envío llega como "Activate Form" de FormSubmit y hay que confirmarlo una vez.
+// Después se puede cambiar por la clave aleatoria que da FormSubmit para no mostrar el correo en el código.
+const correoFormulario = 'recordsalbino@gmail.com';
 
 export const site = {
   nombre: 'Albiño Records',
   lema: 'Productora Audiovisual',
-  whatsappLink: 'https://wa.me/573000000000', // los botones de "Cotizar" y "Escríbenos" abren este chat
-  correo: 'contacto@albinorecords.com', // correo PÚBLICO: el que se ve en la fila "Correo" de Contacto. PENDIENTE: el real
+  // Ubicación: se usa en los títulos para Google, el pie y los datos de negocio local (SEO)
+  ciudad: 'Ambato',
+  provincia: 'Tungurahua',
+  pais: 'Ecuador',
+  // Descripción general del sitio (la que Google muestra para el inicio)
+  descripcion: 'Productora audiovisual en Ambato, Ecuador: producción musical, fotografía y video de bodas, podcast, manejo de redes y fotografía profesional.',
+  whatsappLink: 'https://wa.me/593988975935', // los botones de "Cotizar" y "Escríbenos" abren este chat
+  telefono: '+593 98 897 5935', // se usa en los datos de negocio para Google
+  correo: 'recordsalbino@gmail.com', // correo PÚBLICO: el que se ve en la fila "Correo" de Contacto
   // Formulario de contacto: FormSubmit reenvía cada mensaje a `correoFormulario`, sin cuenta ni clave.
   // El primer mensaje llega como "Activate Form": hay que abrirlo y confirmar una sola vez.
   // Si el envío falla, se abre el correo de la persona con el mensaje escrito para `correo`.

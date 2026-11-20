@@ -23,7 +23,7 @@ export const servicios: Servicio[] = [
     id: 'produccion-musical',
     titulo: 'Producción musical',
     resumen: 'Del demo al master, con sonido profesional.',
-    texto: 'Grabación, producción, mezcla y masterización para artistas y proyectos que buscan un sonido listo para plataformas.',
+    texto: 'Grabación, producción, mezcla y masterización en Ambato, para artistas y proyectos que buscan un sonido listo para plataformas.',
     imagen: '/media/produccion-fondo.webp',
     galeria: [
       { tipo: 'video', src: '/media/produccion-dyandy.mp4', poster: '/media/produccion-dyandy.jpg', alt: 'Grabación en el estudio' },
@@ -75,10 +75,10 @@ export const servicios: Servicio[] = [
     anim: 'cortina',
   },
   {
-    id: 'fotografia-personal',
-    titulo: 'Fotografía personal',
+    id: 'fotografia-profesional',
+    titulo: 'Fotografía profesional',
     resumen: 'Retratos que muestran quién eres.',
-    texto: 'Sesiones de retrato, graduación, embarazo o marca personal, en estudio o exteriores, con edición profesional.',
+    texto: 'Sesiones de retrato, graduación, embarazo o marca personal en Ambato, en estudio o exteriores, con edición profesional.',
     imagen: '/media/fotografia-graduada.webp',
     galeria: [
       { tipo: 'foto', src: '/media/fotografia-estudio.webp', alt: 'Retrato en estudio con vestido naranja' },

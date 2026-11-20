@@ -8,9 +8,39 @@ import PieCuero from '../components/PieCuero.astro';
 import { site } from '../data/site';
 
 // pie: false cuando la página ya trae el pie dentro (el inicio, en Fundacion)
-interface Props { titulo?: string; descripcion?: string; pie?: boolean }
-const { titulo, descripcion = `${site.nombre} – ${site.lema}`, pie = true } = Astro.props;
-const tituloCompleto = titulo ? `${titulo} | ${site.nombre}` : `${site.nombre} – ${site.lema}`;
+// indexar: false para páginas que Google no debe mostrar (la de error 404)
+interface Props { titulo?: string; descripcion?: string; pie?: boolean; indexar?: boolean }
+const { titulo, descripcion = site.descripcion, pie = true, indexar = true } = Astro.props;
+// Sin título propio (el inicio): "Albiño Records | Productora audiovisual en Ambato"
+const tituloCompleto = titulo
+  ? `${titulo} | ${site.nombre}`
+  : `${site.nombre} | Productora audiovisual en ${site.ciudad}`;
+
+// SEO: dirección única de cada página (evita que www y sin www cuenten como páginas distintas)
+const canonica = new URL(Astro.url.pathname, Astro.site).href;
+const imagenCompartir = new URL('/media/compartir.jpg', Astro.site).href;
+
+// Datos de negocio local para Google (schema.org)
+const negocio = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfessionalService',
+  name: site.nombre,
+  description: site.descripcion,
+  telephone: site.telefono,
+  email: site.correo,
+  founder: { '@type': 'Person', name: 'Jefferson Albiño' },
+  url: new URL('/', Astro.site).href,
+  image: imagenCompartir,
+  logo: new URL('/media/apple-touch-icon.png', Astro.site).href,
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: site.ciudad,
+    addressRegion: site.provincia,
+    addressCountry: 'EC',
+  },
+  areaServed: { '@type': 'City', name: site.ciudad },
+  sameAs: site.redes.map((r) => r.url),
+};
 ---
 <!doctype html>
 <html lang="es">
@@ -19,11 +49,24 @@ const tituloCompleto = titulo ? `${titulo} | ${site.nombre}` : `${site.nombre} �
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tituloCompleto}</title>
     <meta name="description" content={descripcion} />
+    {indexar ? <link rel="canonical" href={canonica} /> : <meta name="robots" content="noindex" />}
+    <!-- Vista previa al compartir en WhatsApp, Facebook, etc. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.nombre} />
+    <meta property="og:locale" content="es_EC" />
+    <meta property="og:url" content={canonica} />
     <meta property="og:title" content={tituloCompleto} />
     <meta property="og:description" content={descripcion} />
+    <meta property="og:image" content={imagenCompartir} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="application/ld+json" set:html={JSON.stringify(negocio)} />
     <link rel="icon" href="/media/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/media/favicon.png" type="image/png" sizes="64x64" />
     <link rel="apple-touch-icon" href="/media/apple-touch-icon.png" />
+    <!-- Ruta de esta página: el script de abajo la compara con la dirección del navegador -->
+    <meta name="ruta-pagina" content={Astro.url.pathname} />
     <!-- Transiciones suaves entre páginas: el menú se conserva y el contenido cambia con un fundido -->
     <ClientRouter />
     <!-- Sin JavaScript el menú se muestra en su posición fija -->
@@ -37,6 +80,31 @@ const tituloCompleto = titulo ? `${titulo} | ${site.nombre}` : `${site.nombre} �
     {pie && <PieCuero />}
 
     <script>
+      import { navigate } from 'astro:transitions/client';
+
+      // Dirección y página desfasadas: con Atrás/Adelante el navegador cambia la dirección
+      // al instante y el ClientRouter cambia el contenido después. Si dos cambios se cruzan
+      // (o uno se cancela), puede quedar la dirección de una página y el contenido de otra
+      // (p. ej. /contacto/ mostrando Servicios). Al terminar cada cambio se compara la página
+      // mostrada con la dirección y, si no coinciden, se carga la de la dirección.
+      const normalizar = (ruta: string) => ruta.replace(/index\.html$/, '').replace(/\/+$/, '') || '/';
+      let reintento = '';
+      document.addEventListener('astro:page-load', () => {
+        const pagina = document.querySelector<HTMLMetaElement>('meta[name="ruta-pagina"]')?.content;
+        if (!pagina || pagina.startsWith('/404')) return; // la 404 se muestra en cualquier dirección
+        const direccion = normalizar(location.pathname);
+        if (normalizar(pagina) === direccion) {
+          reintento = '';
+          return;
+        }
+        if (reintento === direccion) {
+          location.reload(); // segundo intento: carga completa, siempre coincide
+          return;
+        }
+        reintento = direccion;
+        navigate(location.href, { history: 'replace' });
+      });
+
       // Al recargar, la página empieza arriba: el ClientRouter recuerda la posición y sin esto
       // se vuelve a la sección donde se estaba. Atrás y Adelante, y los enlaces con #, no cambian.
       const navegacion = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
