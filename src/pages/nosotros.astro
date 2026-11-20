@@ -21,7 +21,7 @@ const equipo = [
 ];
 ---
 <Base titulo="Nosotros" descripcion="Productora audiovisual de Ambato con más de 5 años de experiencia y cerca de 300 proyectos: bodas, eventos, producciones comerciales y contenido para marcas.">
-  <PageHero imagen="/media/cabecera-nosotros.webp">
+  <PageHero imagen="/media/cabecera-nosotros.webp" clase="cabecera--nosotros">
     Tú imagina<br />y <span class="acento">nosotros</span><br />lo creamos
   </PageHero>
 
@@ -88,6 +88,15 @@ const equipo = [
 </Base>
 
 <style>
+  /* Retrato a la derecha: se ancla arriba para no cortar la cabeza y, en pantallas
+     angostas, se corre a la derecha para que la persona siga visible */
+  :global(.cabecera.cabecera--nosotros .cabecera__fondo) { background-position: center 20%; }
+  /* Cabecera a pantalla completa: la sección siguiente no asoma al cargar y aparece
+     (con .reveal) recién al bajar */
+  :global(.cabecera.cabecera--nosotros) { min-height: 100vh; min-height: 100svh; }
+  @media (max-width: 767px) {
+    :global(.cabecera.cabecera--nosotros .cabecera__fondo) { background-position: 80% 20%; }
+  }
   .historia {
     display: grid;
     grid-template-columns: 1fr 1fr;
